@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Index — Hammer Media Research Company</title>
+    <style>
+        :root {
+            --font-mono:
+                ui-monospace, 'SF Mono', 'SFMono-Regular', Menlo, Monaco, 'Cascadia Mono', Consolas,
+                'Liberation Mono', monospace;
+            color-scheme: light;
+            --bg-color: #ffffff;
+            --text-color: #777777;
+            --border-color: #000000;
+            --muted-text: rgba(0, 0, 0, 0.4);
+            --header-grey: rgba(0, 0, 0, 0.45);
+            --ornament-color: rgba(0, 0, 0, 0.25);
+            --hover-bg: rgba(0, 0, 0, 0.03);
+            --brand-hover-grey: #b0b0b0;
+            --ui-font-size: clamp(11px, 1vw, 12px);
+            --ticker-height: 14px;
+            --ui-chrome-z: 99999;
+            --content-width: min(calc(100vw - 48px), 720px);
+            --accent: rgba(0, 0, 0, 0.72);
+            --reveal-distance: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            min-height: 100%;
+            min-height: 100dvh;
+            background-color: var(--bg-color);
+        }
+
+        html::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-color: var(--bg-color);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            font-size: 12px;
+            line-height: 20px;
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            body.dot-cursor,
+            body.dot-cursor * {
+                cursor: none !important;
+            }
+        }
+
+        pre, code {
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                transition-duration: 0.001ms !important;
+                animation-duration: 0.001ms !important;
+            }
+            .brand-name:hover .brand-char:not(.brand-space),
+            .brand-name:focus-visible .brand-char:not(.brand-space) {
+                transition-delay: 0ms !important;
+            }
+            .reveal {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+            body:not(.intro-index) .header-meta,
+            body:not(.intro-nav) .site-nav,
+            body:not(.intro-chrome) .scroll-progress,
+            body:not(.archive-visible) .header-utilities {
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                visibility: visible !important;
+            }
+        }
+
+        /* --- PAGE LOAD INTRO --- */
+        /* 1) Index only → 2) Nav fades in → 3) Archive shows on Information */
+        .header-meta,
+        .site-nav,
+        .header-utilities,
+        .scroll-progress {
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        body:not(.intro-index) .header-meta {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.intro-index .header-meta {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        body:not(.intro-nav) .site-nav {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.intro-nav .site-nav {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        body:not(.intro-chrome) .scroll-progress {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.intro-chrome .scroll-progress {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        body:not(.archive-visible) .header-utilities {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.archive-visible .header-utilities {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        /* --- SCROLL PROGRESS --- */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 1px;
+            width: 0%;
+            background: var(--border-color);
+            z-index: calc(var(--ui-chrome-z) + 1);
+            pointer-events: none;
+            transition: width 0.05s linear, opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        /* --- HEADER --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1000;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            padding: 24px;
+            font-family: var(--font-mono);
+            font-weight: 400;
+        }
+
+        header .brand-name,
+        header .site-nav,
+        header .header-utilities,
+        header .header-meta {
+            pointer-events: auto;
+        }
+
+        .header-meta {
+            grid-column: 1;
+            grid-row: 1;
+            align-self: start;
+            justify-self: start;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-color);
+        }
+
+        .header-meta .ticker-wrap {
+            height: 20px;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .header-meta .ticker-frame {
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.3, 0, 0.1, 1);
+        }
+
+        .header-meta .ticker-item {
+            height: 20px;
+            line-height: 20px;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            color: var(--text-color);
+        }
+
+        .header-meta .ticker-index-label {
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        .site-nav {
+            grid-column: 1;
+            grid-row: 3;
+            align-self: end;
+            justify-self: start;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .brand-name {
+            grid-column: 2;
+            grid-row: 1;
+            align-self: start;
+            justify-self: end;
+            text-align: right;
+            color: var(--text-color);
+            font-family: var(--font-mono);
+            font-weight: 500;
+            font-size: 12px;
+            line-height: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: none;
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            outline: none;
+        }
+
+        .brand-name .brand-char {
+            display: inline-block;
+            font-family: inherit;
+            font-size: inherit;
+            font-weight: inherit;
+            line-height: 20px;
+            letter-spacing: inherit;
+            text-transform: inherit;
+            min-width: 1ch;
+            height: 20px;
+            text-align: center;
+            box-sizing: border-box;
+            transition: background-color 0.05s steps(1, end), color 0.05s steps(1, end);
+        }
+
+        .brand-name .brand-space {
+            min-width: 0.6ch;
+            width: 0.6ch;
+            pointer-events: none;
+        }
+
+        .brand-name .brand-char:not(.brand-space):hover,
+        .brand-name .brand-char:not(.brand-space):focus-visible {
+            background-color: var(--brand-hover-grey);
+            color: #ffffff;
+            outline: none;
+        }
+
+        .header-utilities {
+            grid-column: 2;
+            grid-row: 3;
+            align-self: end;
+            justify-self: end;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .archive-link {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .archive-link:hover,
+        .archive-link:focus-visible {
+            color: var(--accent);
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            outline: none;
+        }
+
+        nav ul {
+            list-style: none;
+            text-align: left;
+            display: grid;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li {
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            display: block;
+            margin: 0;
+            padding: 0;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+        }
+
+        nav ul li a .nav-label {
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        nav ul li a:hover,
+        nav ul li a.active,
+        nav ul li a:focus-visible {
+            text-decoration: none;
+            color: var(--accent);
+            outline: none;
+        }
+
+        nav ul li a.active .nav-label {
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        .ticker-wrap {
+            height: var(--ticker-height);
+            overflow: hidden;
+            text-transform: uppercase;
+            color: var(--muted-text);
+            cursor: default;
+        }
+
+        .ticker-frame {
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.3, 0, 0.1, 1);
+        }
+
+        .ticker-item {
+            height: var(--ticker-height);
+            line-height: var(--ticker-height);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .section-index {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            letter-spacing: inherit;
+            text-transform: inherit;
+            font-variant-numeric: tabular-nums;
+            color: var(--muted-text);
+            user-select: none;
+            margin: 0;
+            padding: 0 0 2px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .section-index .index-current {
+            color: var(--accent);
+        }
+
+        .section-index .index-total {
+            color: var(--muted-text);
+        }
+
+        /* --- SECTIONS --- */
+        .page-lead {
+            height: 100vh;
+            height: 100dvh;
+            min-height: 100vh;
+            min-height: 100dvh;
+            pointer-events: none;
+            background-color: var(--bg-color);
+        }
+
+        section {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 180px 24px 80px;
+            background-color: var(--bg-color);
+        }
+
+        #section-one {
+            /* Extra air above first section text for readability */
+            padding-top: max(180px, calc(8rem + 12vh));
+        }
+
+        section:last-of-type {
+            margin-bottom: 10vh;
+        }
+
+        .section-inner {
+            width: var(--content-width);
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            font-weight: 400;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            letter-spacing: 0.04em;
+            color: var(--text-color);
+        }
+
+        .section-body {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            max-width: 620px;
+        }
+
+        .section-body p {
+            margin-bottom: 1.25em;
+        }
+
+        .section-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* --- REVEAL --- */
+        .reveal {
+            opacity: 0;
+            transform: translateY(var(--reveal-distance));
+            transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .reveal.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.08s; }
+        .reveal-delay-2 { transition-delay: 0.16s; }
+        .reveal-delay-3 { transition-delay: 0.24s; }
+        .reveal-delay-4 { transition-delay: 0.32s; }
+
+        /* --- INFO / TECH --- */
+
+        /* --- INFO / TECH --- */
+        .info-grid {
+            display: grid;
+            gap: 40px;
+            max-width: 620px;
+        }
+
+        .info-block {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--muted-text);
+        }
+
+        .address-block {
+            display: grid;
+            gap: 2px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            font-style: normal;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-color);
+        }
+
+        .tech-list {
+            list-style: none;
+            display: grid;
+            gap: 0;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .tech-item {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .tech-trigger {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 28px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0;
+            background: none;
+            border: 0;
+            font-family: inherit;
+            font-size: 12px;
+            line-height: 20px;
+            color: var(--text-color);
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+        }
+
+        .tech-trigger:hover,
+        .tech-trigger:focus-visible,
+        .tech-item.is-open .tech-trigger {
+            color: var(--accent);
+            outline: none;
+            padding-left: 4px;
+        }
+
+        .tech-index {
+            color: var(--muted-text);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.08em;
+        }
+
+        .tech-name {
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .tech-tag {
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted-text);
+        }
+
+        .tech-panel {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .tech-item.is-open .tech-panel {
+            grid-template-rows: 1fr;
+        }
+
+        .tech-panel-inner {
+            overflow: hidden;
+        }
+
+        .tech-desc {
+            padding: 0 0 16px 40px;
+            max-width: 520px;
+            color: var(--text-color);
+            opacity: 0.85;
+        }
+
+        .tech-media {
+            margin: 8px auto 20px;
+            width: 100%;
+            max-width: min(420px, 100%);
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .tech-media video {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            background: #111;
+        }
+
+        @media (min-width: 869px) {
+            .tech-media {
+                max-width: 360px;
+                margin: 12px auto 24px;
+                padding: 16px;
+            }
+        }
+
+        .cursor-dot {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.35);
+            pointer-events: none;
+            z-index: calc(var(--ui-chrome-z) + 2);
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background 0.2s ease;
+            mix-blend-mode: multiply;
+        }
+
+        .cursor-dot.is-active {
+            opacity: 1;
+        }
+
+        .cursor-dot.is-hover {
+            width: 18px;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.12);
+        }
+
+        .cursor-dot.is-hidden {
+            opacity: 0 !important;
+        }
+
+        /* --- BRAND MODAL --- */
+        .brand-modal {
+            position: fixed;
+            inset: 0;
+            z-index: calc(var(--ui-chrome-z) + 10);
+            display: grid;
+            place-items: center;
+            padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .brand-modal.is-open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .brand-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .brand-modal-panel {
+            position: relative;
+            z-index: 1;
+            width: min(72vw, 420px);
+            max-height: min(78vh, 720px);
+            background: #ffffff;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.14);
+            padding: 12px;
+            transform: translateY(10px) scale(0.98);
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .brand-modal.is-open .brand-modal-panel {
+            transform: translateY(0) scale(1);
+        }
+
+        img {
+            filter: grayscale(100%);
+            -webkit-filter: grayscale(100%);
+        }
+
+        .image-frame {
+            position: relative;
+            display: block;
+            isolation: isolate;
+        }
+
+        .image-frame::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--brand-hover-grey);
+            opacity: 0.42;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .brand-modal-image {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: calc(min(78vh, 720px) - 24px);
+            object-fit: contain;
+            background: #0a0a0a;
+            filter: grayscale(100%);
+            -webkit-filter: grayscale(100%);
+        }
+
+        .brand-modal-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 2;
+            width: 28px;
+            height: 28px;
+            border: 0;
+            background: rgba(255, 255, 255, 0.92);
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 28px;
+            text-align: center;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .brand-modal-close:hover,
+        .brand-modal-close:focus-visible {
+            background: #000000;
+            color: #ffffff;
+            outline: none;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 868px) {
+            :root {
+                --ui-font-size: clamp(10px, 2.8vw, 12px);
+                --ticker-height: 13px;
+                --content-width: calc(100vw - 32px);
+            }
+
+            header {
+                grid-template-columns: 1fr auto;
+                grid-template-rows: auto;
+                padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left));
+            }
+
+            .site-nav {
+                position: fixed;
+                inset: auto auto max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+                z-index: var(--ui-chrome-z);
+            }
+
+            .header-meta {
+                grid-column: 1;
+                grid-row: 1;
+                justify-self: start;
+            }
+
+            .brand-name {
+                grid-column: 2;
+                grid-row: 1;
+                justify-self: end;
+            }
+
+            .header-utilities {
+                position: fixed;
+                inset: auto max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) auto;
+                z-index: var(--ui-chrome-z);
+            }
+
+            section {
+                padding-top: max(120px, calc(104px + env(safe-area-inset-top)));
+                padding-left: max(16px, env(safe-area-inset-left));
+                padding-right: max(16px, env(safe-area-inset-right));
+                padding-bottom: max(80px, calc(64px + env(safe-area-inset-bottom)));
+            }
+
+            body.dot-cursor,
+            body.dot-cursor * {
+                cursor: auto !important;
+            }
+
+            .cursor-dot {
+                display: none;
+            }
+        }
+
+        @media (hover: none) {
+            body.dot-cursor,
+            body.dot-cursor * {
+                cursor: auto !important;
+            }
+
+            .cursor-dot {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+    <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+
+    <div class="brand-modal" id="brand-modal" role="dialog" aria-modal="true" aria-label="Hammer Media Research Company" hidden>
+        <button type="button" class="brand-modal-backdrop" id="brand-modal-backdrop" aria-label="Close image"></button>
+        <div class="brand-modal-panel">
+            <button type="button" class="brand-modal-close" id="brand-modal-close" aria-label="Close">×</button>
+            <div class="image-frame">
+                <img class="brand-modal-image" src="dith3r-29.png" alt="Network rack cabling research image" width="840" height="1120" />
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <div class="header-meta" aria-label="Archive status">
+            <div class="ticker-wrap" id="ticker-wrap" title="Click to advance">
+                <div class="ticker-frame" id="ticker-frame">
+                    <div class="ticker-item"><span class="ticker-index-label">index</span></div>
+                    <div class="ticker-item">status: active</div>
+                    <div class="ticker-item">online: access</div>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="brand-name" aria-label="Open brand image" id="brand-name"></button>
+        <nav class="site-nav" aria-label="Section navigation">
+            <div class="section-index" id="section-index" aria-live="polite">
+                <span class="index-current">00</span>
+                <span class="index-total">/ 05</span>
+            </div>
+            <ul>
+                <li>
+                    <a href="#section-one" class="nav-link">
+                        <span class="nav-label">Platform &amp; Database</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#section-two" class="nav-link">
+                        <span class="nav-label">Fields of Inquiry</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#section-three" class="nav-link">
+                        <span class="nav-label">Art, Design &amp; Access</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#section-tech" class="nav-link">
+                        <span class="nav-label">Listed Technology</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#section-info" class="nav-link">
+                        <span class="nav-label">Information</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="header-utilities">
+            <a class="archive-link" href="#section-one" id="archive-link">Archive</a>
+        </div>
+    </header>
+
+    <div class="page-lead" aria-hidden="true"></div>
+
+    <section id="section-one" aria-labelledby="title-one" data-index="01">
+        <div class="section-inner">
+            <div class="section-title reveal" id="title-one">Platform &amp; Database</div>
+            <div class="section-body reveal reveal-delay-1">
+                <p>Hammer Media Research Company is a platform and a database. It exists to collect, index, and cross-reference experiments — objects and processes that move between the digital and the physical, without settling into a single fixed medium.</p>
+                <p>Entries here are logged rather than published. Where Hammer the magazine produces finished work, this is the research underneath it: material still in process, held for reference, and available for reuse.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-two" aria-labelledby="title-two" data-index="02">
+        <div class="section-inner">
+            <div class="section-title reveal" id="title-two">Fields of Inquiry</div>
+            <div class="section-body reveal reveal-delay-1">
+                <p>The current scope spans digital and real-life objects — artifacts that exist as data and as physical things at once — alongside visual research: imaging, optics, and the mechanics of how pictures get made and seen.</p>
+                <p>A parallel line of inquiry sits in surveillance and cybersecurity: infrastructure, data exposure, and the systems that watch, log, and secure. These are treated as design subjects here, not only technical ones.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-three" aria-labelledby="title-three" data-index="03">
+        <div class="section-inner">
+            <div class="section-title reveal" id="title-three">Art, Design &amp; Access</div>
+            <div class="section-body reveal reveal-delay-1">
+                <p>Art exploration and design work runs through all of it — prototypes, interfaces, tools, and objects built to test an idea rather than ship a product. Some become published work; most stay in the database.</p>
+                <p>Access is limited and selective, consistent with how Hammer operates elsewhere: quiet distribution, direct contact, material released on its own schedule rather than a feed.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-tech" aria-labelledby="title-tech" data-index="04">
+        <div class="section-inner">
+            <div class="section-title reveal" id="title-tech">Listed Technology</div>
+            <div class="info-grid">
+                <div class="info-block reveal reveal-delay-1">
+                    <ul class="tech-list" id="tech-list">
+                        <li class="tech-item" data-tech="hammer-mag">
+                            <button type="button" class="tech-trigger" aria-expanded="false" aria-controls="panel-mag">
+                                <span class="tech-index">01</span>
+                                <span class="tech-name">Hammer Mag</span>
+                                <span class="tech-tag">print / digital</span>
+                            </button>
+                            <div class="tech-panel" id="panel-mag" role="region" hidden>
+                                <div class="tech-panel-inner">
+                                    <p class="tech-desc">Editorial platform for finished features, visual essays, and issue-based publishing across print and digital formats.</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="tech-item" data-tech="hammercam">
+                            <button type="button" class="tech-trigger" aria-expanded="false" aria-controls="panel-cam">
+                                <span class="tech-index">02</span>
+                                <span class="tech-name">Hammercam</span>
+                                <span class="tech-tag">imaging</span>
+                            </button>
+                            <div class="tech-panel" id="panel-cam" role="region" hidden>
+                                <div class="tech-panel-inner">
+                                    <div class="tech-media">
+                                        <video
+                                            muted
+                                            loop
+                                            playsinline
+                                            webkit-playsinline
+                                            preload="auto"
+                                            aria-label="Hammercam sample"
+                                        >
+                                            <source src="hammercamhagg.mp4" type="video/mp4" />
+                                            <source src="hammercamhagg.webm" type="video/webm" />
+                                        </video>
+                                    </div>
+                                    <p class="tech-desc">Capture and imaging tooling for visual research — optics experiments, documentation, and image pipelines.</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="tech-item" data-tech="hammertv">
+                            <button type="button" class="tech-trigger" aria-expanded="false" aria-controls="panel-tv">
+                                <span class="tech-index">03</span>
+                                <span class="tech-name">HammerTV</span>
+                                <span class="tech-tag">broadcast</span>
+                            </button>
+                            <div class="tech-panel" id="panel-tv" role="region" hidden>
+                                <div class="tech-panel-inner">
+                                    <p class="tech-desc">Moving-image channel for short-form and long-form transmissions tied to Hammer research and editorial output.</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="tech-item" data-tech="hammer-portal">
+                            <button type="button" class="tech-trigger" aria-expanded="false" aria-controls="panel-portal">
+                                <span class="tech-index">04</span>
+                                <span class="tech-name">Hammer Portal</span>
+                                <span class="tech-tag">toolbox</span>
+                            </button>
+                            <div class="tech-panel" id="panel-portal" role="region" hidden>
+                                <div class="tech-panel-inner">
+                                    <p class="tech-desc">Internal toolbox and portal stack for indexing, workflows, communications, and cross-project research access.</p>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="tech-item" data-tech="hammer-lockbox">
+                            <button type="button" class="tech-trigger" aria-expanded="false" aria-controls="panel-lockbox">
+                                <span class="tech-index">05</span>
+                                <span class="tech-name">Hammer Lockbox</span>
+                                <span class="tech-tag">secure storing</span>
+                            </button>
+                            <div class="tech-panel" id="panel-lockbox" role="region" hidden>
+                                <div class="tech-panel-inner">
+                                    <p class="tech-desc">Controlled vault for research assets, credentials, and restricted materials — selective access with logged release.</p>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-info" aria-labelledby="title-info" data-index="05">
+        <div class="section-inner">
+            <div class="section-title reveal" id="title-info">Information</div>
+            <div class="info-grid">
+                <div class="info-block reveal reveal-delay-1">
+                    <div class="info-label">Registered Address</div>
+                    <address class="address-block" id="company-address">
+                        <span>3400 Cottage Way, Ste G2 #36567</span>
+                        <span>Sacramento, California</span>
+                        <span>95825 USA</span>
+                    </address>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // Intro: index → nav; brand/archive/section text wait for scroll
+        const tickerFrame = document.getElementById('ticker-frame');
+        let tickerTimer = null;
+        let tickerIndex = 0;
+        const tickerStep = 20;
+        let chromeRevealed = false;
+
+        function freezeTickerOnIndex() {
+            tickerIndex = 0;
+            if (tickerFrame) tickerFrame.style.transform = 'translateY(0)';
+        }
+
+        function advanceTicker() {
+            const items = tickerFrame?.querySelectorAll('.ticker-item');
+            if (!tickerFrame || !items?.length) return;
+            tickerIndex = (tickerIndex + 1) % items.length;
+            tickerFrame.style.transform = 'translateY(' + (-tickerIndex * tickerStep) + 'px)';
+        }
+
+        function startTicker() {
+            if (tickerTimer || reduceMotion) return;
+            tickerTimer = setInterval(advanceTicker, 3200);
+        }
+
+        function revealChrome() {
+            if (chromeRevealed) return;
+            chromeRevealed = true;
+            document.body.classList.add('intro-chrome');
+            startTicker();
+        }
+
+        function revealSectionContent(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return;
+            section.querySelectorAll('.reveal').forEach((el) => {
+                el.classList.add('is-visible');
+            });
+        }
+
+        function isSectionRevealed(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return false;
+            const reveals = section.querySelectorAll('.reveal');
+            if (!reveals.length) return true;
+            return Array.from(reveals).some((el) => el.classList.contains('is-visible'));
+        }
+
+        function openNavSection(sectionId) {
+            disarmIntroScroll();
+            revealSectionContent(sectionId);
+            revealChrome();
+            if (sectionId === 'section-one') {
+                snapToFirstSection();
+            } else {
+                scrollSectionToReadable(sectionId);
+                updateActiveNav();
+            }
+            armScrollReveal();
+        }
+
+        function snapToFirstSection() {
+            disarmIntroScroll();
+            revealSectionContent('section-one');
+            revealChrome();
+            armScrollReveal();
+
+            const section = document.getElementById('section-one');
+            if (!section) return;
+
+            const runSnap = () => {
+                // Snap to the first section start (after empty lead), with readable top air via section padding
+                const target = Math.max(0, section.offsetTop);
+                window.scrollTo({
+                    top: target,
+                    behavior: reduceMotion ? 'auto' : 'smooth'
+                });
+                updateActiveNav();
+            };
+
+            requestAnimationFrame(() => {
+                runSnap();
+                // Re-settle after layout/reveal paints
+                requestAnimationFrame(runSnap);
+            });
+        }
+
+        // Intro scroll: 3 short scrolls OR 1 long scroll → snap to first section
+        let introScrollArmed = !reduceMotion;
+        let introShortScrolls = 0;
+        let introBurstDelta = 0;
+        let introBurstTimer = null;
+        const INTRO_SHORT_MIN = 28;
+        const INTRO_LONG_MIN = 140;
+        const INTRO_BURST_GAP = 160;
+
+        function disarmIntroScroll() {
+            introScrollArmed = false;
+            clearTimeout(introBurstTimer);
+            introBurstTimer = null;
+            introBurstDelta = 0;
+            touchStartY = null;
+        }
+
+        function finishIntroBurst() {
+            if (!introScrollArmed || isSectionRevealed('section-one')) {
+                introBurstDelta = 0;
+                return;
+            }
+            if (introBurstDelta >= INTRO_LONG_MIN) {
+                snapToFirstSection();
+            } else if (introBurstDelta >= INTRO_SHORT_MIN) {
+                introShortScrolls += 1;
+                if (introShortScrolls >= 3) {
+                    snapToFirstSection();
+                }
+            }
+            introBurstDelta = 0;
+        }
+
+        function handleIntroScrollDelta(deltaY) {
+            if (!introScrollArmed || isSectionRevealed('section-one')) {
+                disarmIntroScroll();
+                return false;
+            }
+            if (deltaY <= 0) return false;
+
+            introBurstDelta += deltaY;
+            if (introBurstDelta >= INTRO_LONG_MIN) {
+                clearTimeout(introBurstTimer);
+                introBurstDelta = 0;
+                snapToFirstSection();
+                return true;
+            }
+
+            clearTimeout(introBurstTimer);
+            introBurstTimer = setTimeout(finishIntroBurst, INTRO_BURST_GAP);
+            return true;
+        }
+
+        let touchStartY = null;
+
+        window.addEventListener('wheel', (e) => {
+            if (!introScrollArmed) return;
+            if (isSectionRevealed('section-one')) {
+                disarmIntroScroll();
+                return;
+            }
+            if (document.getElementById('brand-modal')?.classList.contains('is-open')) return;
+            if (handleIntroScrollDelta(e.deltaY)) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchstart', (e) => {
+            if (!introScrollArmed) return;
+            touchStartY = e.touches[0]?.clientY ?? null;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!introScrollArmed || touchStartY == null) return;
+            if (isSectionRevealed('section-one')) {
+                disarmIntroScroll();
+                return;
+            }
+            if (document.getElementById('brand-modal')?.classList.contains('is-open')) return;
+            const y = e.touches[0]?.clientY;
+            if (y == null) return;
+            const delta = touchStartY - y;
+            if (handleIntroScrollDelta(delta)) {
+                touchStartY = y;
+                if (e.cancelable) e.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => {
+            touchStartY = null;
+            if (introScrollArmed) finishIntroBurst();
+        }, { passive: true });
+
+        freezeTickerOnIndex();
+
+        if (reduceMotion) {
+            document.body.classList.add('intro-index', 'intro-nav', 'intro-chrome');
+            chromeRevealed = true;
+            document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+        } else {
+            document.body.classList.add('intro-index');
+            setTimeout(() => {
+                document.body.classList.add('intro-nav');
+            }, 380);
+        }
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 8) revealChrome();
+        }, { passive: true });
+
+        const brandBtn = document.querySelector('.brand-name');
+        const brandModal = document.getElementById('brand-modal');
+        const brandModalClose = document.getElementById('brand-modal-close');
+        const brandModalBackdrop = document.getElementById('brand-modal-backdrop');
+
+        function openBrandModal() {
+            if (!brandModal) return;
+            brandModal.hidden = false;
+            requestAnimationFrame(() => {
+                brandModal.classList.add('is-open');
+            });
+            document.body.classList.add('modal-open');
+            brandModalClose?.focus();
+        }
+
+        function closeBrandModal() {
+            if (!brandModal) return;
+            brandModal.classList.remove('is-open');
+            document.body.classList.remove('modal-open');
+            const finish = () => {
+                brandModal.hidden = true;
+                brandModal.removeEventListener('transitionend', finish);
+            };
+            brandModal.addEventListener('transitionend', finish);
+            setTimeout(finish, 300);
+            brandBtn?.focus();
+        }
+
+        if (brandBtn) {
+            const brandText = 'Hammer Media Research Company';
+            brandBtn.replaceChildren(
+                ...Array.from(brandText).map((ch) => {
+                    const span = document.createElement('span');
+                    span.className = ch === ' ' ? 'brand-char brand-space' : 'brand-char';
+                    span.textContent = ch === ' ' ? '\u00A0' : ch;
+                    span.setAttribute('aria-hidden', 'true');
+                    return span;
+                })
+            );
+            brandBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openBrandModal();
+            });
+        }
+
+        brandModalClose?.addEventListener('click', closeBrandModal);
+        brandModalBackdrop?.addEventListener('click', closeBrandModal);
+
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = ['section-one', 'section-two', 'section-three', 'section-tech', 'section-info'];
+        const sectionIndexEl = document.getElementById('section-index');
+        const progressEl = document.getElementById('scroll-progress');
+        const mobileNavQuery = window.matchMedia('(max-width: 868px)');
+
+        function isMobileNav() {
+            return mobileNavQuery.matches;
+        }
+
+        function scrollSectionToReadable(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+            const focus = el.querySelector('.section-inner') || el;
+            // Keep empty air above the text so each section reads cleanly
+            const topGap = Math.max(5.5 * rem, window.innerHeight * 0.18);
+            const absoluteTop = window.scrollY + focus.getBoundingClientRect().top;
+            const target = absoluteTop - topGap;
+
+            window.scrollTo({
+                top: Math.max(0, target),
+                behavior: reduceMotion ? 'auto' : 'smooth'
+            });
+        }
+
+        function scrollSectionToCenter(id, options = {}) {
+            scrollSectionToReadable(id);
+        }
+
+        navLinks.forEach((link) => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const id = link.getAttribute('href')?.replace(/^#/, '');
+                if (!id) return;
+                openNavSection(id);
+            });
+        });
+
+        document.getElementById('archive-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openNavSection('section-one');
+        });
+
+        function updateActiveNav() {
+            const scrollPos = window.scrollY + window.innerHeight * 0.35;
+            let activeId = null;
+            let activeIndex = -1;
+            const firstRevealed = isSectionRevealed('section-one');
+
+            sections.forEach((id, i) => {
+                const el = document.getElementById(id);
+                if (el && el.offsetTop <= scrollPos) {
+                    // Don't treat section one as active until intro has opened it
+                    if (id === 'section-one' && !firstRevealed) return;
+                    activeId = id;
+                    activeIndex = i;
+                }
+            });
+
+            navLinks.forEach((link) => {
+                const href = link.getAttribute('href');
+                const isFirst = href === '#section-one';
+                const shouldActive = !!activeId && href === '#' + activeId && !(isFirst && !firstRevealed);
+                link.classList.toggle('active', shouldActive);
+            });
+
+            document.body.classList.toggle('archive-visible', activeId === 'section-info');
+
+            if (sectionIndexEl) {
+                const displayIndex = activeIndex < 0 ? '00' : String(activeIndex + 1).padStart(2, '0');
+                const current = sectionIndexEl.querySelector('.index-current');
+                const total = sectionIndexEl.querySelector('.index-total');
+                if (current) current.textContent = displayIndex;
+                if (total) total.textContent = '/ 0' + sections.length;
+            }
+
+            if (progressEl) {
+                const doc = document.documentElement;
+                const max = doc.scrollHeight - window.innerHeight;
+                const pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+                progressEl.style.width = pct + '%';
+            }
+        }
+
+        window.addEventListener('scroll', updateActiveNav, { passive: true });
+        window.addEventListener('resize', updateActiveNav, { passive: true });
+        updateActiveNav();
+
+        // After intro, other sections reveal normally on scroll
+        let revealObserver = null;
+
+        function armScrollReveal() {
+            if (reduceMotion) {
+                document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+                return;
+            }
+            if (revealObserver) return;
+
+            if (!('IntersectionObserver' in window)) {
+                document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+                return;
+            }
+
+            revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.16, rootMargin: '0px 0px -6% 0px' });
+
+            document.querySelectorAll('.reveal:not(.is-visible)').forEach((el) => {
+                revealObserver.observe(el);
+            });
+        }
+
+        if (reduceMotion) {
+            document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+        }
+
+        // Top-left status ticker (starts after scroll reveals chrome)
+        const tickerWrap = document.getElementById('ticker-wrap');
+        tickerWrap?.addEventListener('click', () => {
+            if (!chromeRevealed) return;
+            advanceTicker();
+            clearInterval(tickerTimer);
+            tickerTimer = setInterval(advanceTicker, 3200);
+        });
+
+        // Tech accordion
+        const techItems = document.querySelectorAll('.tech-item');
+        const techSection = document.getElementById('section-tech');
+
+        function stopTechVideos() {
+            document.querySelectorAll('#section-tech video').forEach((v) => {
+                v.pause();
+                try { v.currentTime = 0; } catch (_) {}
+            });
+        }
+
+        function closeAllTechPanels() {
+            techItems.forEach((other) => {
+                other.classList.remove('is-open');
+                const otherTrigger = other.querySelector('.tech-trigger');
+                const otherPanel = other.querySelector('.tech-panel');
+                otherTrigger?.setAttribute('aria-expanded', 'false');
+                if (otherPanel) otherPanel.hidden = true;
+            });
+            stopTechVideos();
+        }
+
+        techItems.forEach((item) => {
+            const trigger = item.querySelector('.tech-trigger');
+            const panel = item.querySelector('.tech-panel');
+            if (!trigger || !panel) return;
+
+            trigger.addEventListener('click', () => {
+                const isOpen = item.classList.contains('is-open');
+                closeAllTechPanels();
+
+                if (!isOpen) {
+                    item.classList.add('is-open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                    panel.hidden = false;
+                    const video = item.querySelector('video');
+                    if (video) {
+                        video.load();
+                        const tryPlay = () => video.play().catch(() => {});
+                        if (video.readyState >= 2) tryPlay();
+                        else video.addEventListener('loadeddata', tryPlay, { once: true });
+                    }
+                }
+            });
+        });
+
+        // Stop Hammercam video when Listed Technology leaves the viewport
+        if (techSection && 'IntersectionObserver' in window) {
+            const techVisibility = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) {
+                        closeAllTechPanels();
+                    }
+                });
+            }, { threshold: 0.12 });
+            techVisibility.observe(techSection);
+        }
+
+        // Keyboard section nav: 1-4 and Space / Shift+Space
+        function getActiveSectionIndex() {
+            const scrollPos = window.scrollY + window.innerHeight * 0.5;
+            let activeIndex = 0;
+            sections.forEach((id, i) => {
+                const el = document.getElementById(id);
+                if (el && el.offsetTop <= scrollPos) activeIndex = i;
+            });
+            return activeIndex;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (brandModal?.classList.contains('is-open')) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeBrandModal();
+                }
+                return;
+            }
+
+            if (e.target instanceof HTMLElement && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.isContentEditable)) {
+                return;
+            }
+
+            const numberMap = { '1': 'section-one', '2': 'section-two', '3': 'section-three', '4': 'section-tech', '5': 'section-info' };
+            if (numberMap[e.key]) {
+                e.preventDefault();
+                openNavSection(numberMap[e.key]);
+                return;
+            }
+
+            if (e.code === 'Space' || e.key === ' ') {
+                e.preventDefault();
+                // On load / before first section is open: Space opens 1st nav section
+                if (!e.shiftKey && !isSectionRevealed('section-one')) {
+                    snapToFirstSection();
+                    return;
+                }
+                const current = getActiveSectionIndex();
+                const next = e.shiftKey
+                    ? Math.max(0, current - 1)
+                    : Math.min(sections.length - 1, current + 1);
+                openNavSection(sections[next]);
+            }
+        });
+
+        // Dot-only cursor (desktop)
+        const cursor = document.getElementById('cursor-dot');
+        const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (cursor && canHover) {
+            document.body.classList.add('dot-cursor');
+            let hideDot = false;
+
+            window.addEventListener('mousemove', (e) => {
+                cursor.style.left = e.clientX + 'px';
+                cursor.style.top = e.clientY + 'px';
+                if (!hideDot) cursor.classList.add('is-active');
+            }, { passive: true });
+
+            document.addEventListener('mouseleave', () => {
+                cursor.classList.remove('is-active');
+            });
+
+            document.querySelectorAll('a, button, .tech-trigger, .ticker-wrap').forEach((el) => {
+                if (el.classList.contains('brand-name')) return;
+                el.addEventListener('mouseenter', () => cursor.classList.add('is-hover'));
+                el.addEventListener('mouseleave', () => cursor.classList.remove('is-hover'));
+            });
+
+            brandBtn?.querySelectorAll('.brand-char:not(.brand-space)').forEach((el) => {
+                el.addEventListener('mouseenter', () => {
+                    hideDot = true;
+                    cursor.classList.add('is-hidden');
+                    cursor.classList.remove('is-active', 'is-hover');
+                });
+                el.addEventListener('mouseleave', () => {
+                    hideDot = false;
+                    cursor.classList.remove('is-hidden');
+                    cursor.classList.add('is-active');
+                });
+            });
+        }
+    </script>
+</body>
+</html>
