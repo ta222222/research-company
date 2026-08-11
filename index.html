@@ -433,6 +433,12 @@
             min-height: 100dvh;
             pointer-events: none;
             background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .intro-video-wrap {
+            display: none;
         }
 
         section {
@@ -868,6 +874,41 @@
             .cursor-dot {
                 display: none;
             }
+
+            /* Full-bleed intro video (index / before scroll) */
+            .intro-video-wrap {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                pointer-events: none;
+                overflow: hidden;
+                opacity: 1;
+                visibility: visible;
+                transition: opacity 0.5s ease, visibility 0.5s ease;
+            }
+
+            body.intro-past .intro-video-wrap,
+            .intro-video-wrap.is-hidden {
+                opacity: 0;
+                visibility: hidden;
+            }
+
+            .intro-video {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                /* Bleed ~0.75in (4.5rem) past each edge */
+                width: calc(100% + 9rem);
+                height: calc(100% + 9rem);
+                transform: translate(-50%, -50%);
+                object-fit: cover;
+                object-position: center;
+            }
+
+            .page-lead {
+                background-color: transparent;
+            }
         }
 
         @media (hover: none) {
@@ -946,7 +987,21 @@
         </div>
     </header>
 
-    <div class="page-lead" aria-hidden="true"></div>
+    <div class="page-lead" aria-hidden="true">
+        <div class="intro-video-wrap" id="intro-video-wrap">
+            <video
+                id="intro-video"
+                class="intro-video"
+                src="https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov"
+                muted
+                loop
+                playsinline
+                webkit-playsinline
+                preload="auto"
+                disablepictureinpicture
+            ></video>
+        </div>
+    </div>
 
     <section id="section-one" aria-labelledby="title-one" data-index="01">
         <div class="section-inner">
@@ -1107,6 +1162,93 @@
             tickerTimer = setInterval(advanceTicker, 3200);
         }
 
+        // Mobile full-bleed intro video (index, before scroll)
+        const introVideo = document.getElementById('intro-video');
+        const introVideoWrap = document.getElementById('intro-video-wrap');
+        const mobileIntroQuery = window.matchMedia('(max-width: 868px)');
+        let introVideoActive = false;
+        let introLoopBusy = false;
+        let introLoopArmed = false;
+
+        function isMobileIntro() {
+            return mobileIntroQuery.matches;
+        }
+
+        function restartIntroLoop() {
+            if (!introVideo || !introVideoActive || introLoopBusy) return;
+            introLoopBusy = true;
+            try {
+                const t = introVideo.currentTime;
+                // Seek slightly past 0 — some decoders stall on exact 0
+                introVideo.currentTime = t > 0.05 ? 0.001 : 0;
+            } catch (_) {}
+            const p = introVideo.play();
+            if (p && typeof p.then === 'function') {
+                p.catch(() => {}).finally(() => { introLoopBusy = false; });
+            } else {
+                introLoopBusy = false;
+            }
+        }
+
+        function armIntroVideoLoop() {
+            if (!introVideo || introLoopArmed) return;
+            introLoopArmed = true;
+            introVideo.loop = true;
+            introVideo.muted = true;
+
+            // Primary: native loop. Backup: ended + near-end restart (safer for .mov / iOS)
+            introVideo.addEventListener('ended', () => {
+                if (!introVideoActive) return;
+                restartIntroLoop();
+            });
+
+            introVideo.addEventListener('timeupdate', () => {
+                if (!introVideoActive || introLoopBusy) return;
+                const d = introVideo.duration;
+                if (!d || !isFinite(d) || d < 0.25) return;
+                if (introVideo.currentTime >= d - 0.08) {
+                    restartIntroLoop();
+                }
+            });
+
+            introVideo.addEventListener('stalled', () => {
+                if (introVideoActive) introVideo.play().catch(() => {});
+            });
+
+            introVideo.addEventListener('pause', () => {
+                // If the browser pauses mid-loop while intro is still active, resume
+                if (!introVideoActive || document.hidden) return;
+                requestAnimationFrame(() => {
+                    if (introVideoActive && introVideo.paused) {
+                        introVideo.play().catch(() => {});
+                    }
+                });
+            });
+        }
+
+        function playIntroVideo() {
+            if (!introVideo || !isMobileIntro() || reduceMotion) return;
+            introVideoActive = true;
+            document.body.classList.remove('intro-past');
+            introVideoWrap?.classList.remove('is-hidden');
+            introVideo.muted = true;
+            introVideo.playsInline = true;
+            armIntroVideoLoop();
+            const tryPlay = () => introVideo.play().catch(() => {});
+            if (introVideo.readyState >= 2) tryPlay();
+            else introVideo.addEventListener('loadeddata', tryPlay, { once: true });
+        }
+
+        function leaveIntroVideo() {
+            if (!introVideoActive && document.body.classList.contains('intro-past')) return;
+            introVideoActive = false;
+            document.body.classList.add('intro-past');
+            introVideoWrap?.classList.add('is-hidden');
+            if (introVideo) {
+                introVideo.pause();
+            }
+        }
+
         function revealChrome() {
             if (chromeRevealed) return;
             chromeRevealed = true;
@@ -1132,6 +1274,7 @@
 
         function openNavSection(sectionId) {
             disarmIntroScroll();
+            leaveIntroVideo();
             revealSectionContent(sectionId);
             revealChrome();
             if (sectionId === 'section-one') {
@@ -1145,6 +1288,7 @@
 
         function snapToFirstSection() {
             disarmIntroScroll();
+            leaveIntroVideo();
             revealSectionContent('section-one');
             revealChrome();
             armScrollReveal();
@@ -1265,19 +1409,39 @@
         freezeTickerOnIndex();
 
         if (reduceMotion) {
-            document.body.classList.add('intro-index', 'intro-nav', 'intro-chrome');
+            document.body.classList.add('intro-index', 'intro-nav', 'intro-chrome', 'intro-past');
             chromeRevealed = true;
             document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+            introVideoWrap?.classList.add('is-hidden');
         } else {
             document.body.classList.add('intro-index');
+            playIntroVideo();
             setTimeout(() => {
                 document.body.classList.add('intro-nav');
             }, 380);
         }
 
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 8) revealChrome();
+            if (window.scrollY > 8) {
+                revealChrome();
+                leaveIntroVideo();
+            } else if (isMobileIntro() && !reduceMotion) {
+                playIntroVideo();
+            }
         }, { passive: true });
+
+        mobileIntroQuery.addEventListener?.('change', () => {
+            if (isMobileIntro() && window.scrollY <= 8 && !reduceMotion) {
+                playIntroVideo();
+            } else {
+                leaveIntroVideo();
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden || !introVideoActive) return;
+            introVideo?.play().catch(() => {});
+        });
 
         const brandBtn = document.querySelector('.brand-name');
         const brandModal = document.getElementById('brand-modal');
