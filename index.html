@@ -880,30 +880,34 @@
                 display: block;
                 position: fixed;
                 inset: 0;
-                z-index: 0;
+                z-index: 2;
                 pointer-events: none;
                 overflow: hidden;
                 opacity: 1;
                 visibility: visible;
+                background: #000;
                 transition: opacity 0.5s ease, visibility 0.5s ease;
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
             }
 
             body.intro-past .intro-video-wrap,
             .intro-video-wrap.is-hidden {
                 opacity: 0;
                 visibility: hidden;
+                pointer-events: none;
             }
 
             .intro-video {
+                /* No transform on <video> — iOS Safari blanks transformed video */
                 position: absolute;
-                top: 50%;
-                left: 50%;
-                /* Bleed ~0.75in (4.5rem) past each edge */
+                top: -4.5rem;
+                left: -4.5rem;
                 width: calc(100% + 9rem);
                 height: calc(100% + 9rem);
-                transform: translate(-50%, -50%);
                 object-fit: cover;
                 object-position: center;
+                background: #000;
             }
 
             .page-lead {
@@ -992,14 +996,19 @@
             <video
                 id="intro-video"
                 class="intro-video"
-                src="https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov"
                 muted
+                defaultMuted
+                autoplay
                 loop
                 playsinline
                 webkit-playsinline
                 preload="auto"
                 disablepictureinpicture
-            ></video>
+                x-webkit-airplay="deny"
+            >
+                <source src="https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov" type="video/quicktime" />
+                <source src="https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov" type="video/mp4" />
+            </video>
         </div>
     </div>
 
@@ -1165,22 +1174,73 @@
         // Mobile full-bleed intro video (index, before scroll)
         const introVideo = document.getElementById('intro-video');
         const introVideoWrap = document.getElementById('intro-video-wrap');
-        const mobileIntroQuery = window.matchMedia('(max-width: 868px)');
+        const mobileIntroQuery = window.matchMedia('(max-width: 868px), (hover: none) and (pointer: coarse)');
+        const INTRO_VIDEO_URL = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov';
         let introVideoActive = false;
         let introLoopBusy = false;
         let introLoopArmed = false;
+        let introSrcReady = false;
+        let introSrcLoading = null;
+        let introBlobUrl = null;
 
         function isMobileIntro() {
             return mobileIntroQuery.matches;
+        }
+
+        function prepareIntroVideoEl() {
+            if (!introVideo) return;
+            introVideo.muted = true;
+            introVideo.defaultMuted = true;
+            introVideo.playsInline = true;
+            introVideo.setAttribute('muted', '');
+            introVideo.setAttribute('playsinline', '');
+            introVideo.setAttribute('webkit-playsinline', '');
+            introVideo.setAttribute('autoplay', '');
+            try { introVideo.volume = 0; } catch (_) {}
+        }
+
+        // GitHub serves application/octet-stream — iOS often rejects it.
+        // Fetch → typed blob (video/mp4) so Safari will decode/play.
+        function ensureIntroVideoSrc() {
+            if (!introVideo) return Promise.resolve(false);
+            if (introSrcReady && (introBlobUrl || introVideo.currentSrc)) return Promise.resolve(true);
+            if (introSrcLoading) return introSrcLoading;
+
+            prepareIntroVideoEl();
+
+            introSrcLoading = (async () => {
+                try {
+                    const res = await fetch(INTRO_VIDEO_URL, { mode: 'cors', credentials: 'omit' });
+                    if (!res.ok) throw new Error('intro fetch ' + res.status);
+                    const buf = await res.arrayBuffer();
+                    if (introBlobUrl) {
+                        try { URL.revokeObjectURL(introBlobUrl); } catch (_) {}
+                    }
+                    const blob = new Blob([buf], { type: 'video/quicktime' });
+                    introBlobUrl = URL.createObjectURL(blob);
+                    while (introVideo.firstChild) introVideo.removeChild(introVideo.firstChild);
+                    introVideo.removeAttribute('src');
+                    introVideo.src = introBlobUrl;
+                    introVideo.load();
+                    introSrcReady = true;
+                    return true;
+                } catch (_) {
+                    introSrcReady = true;
+                    try { introVideo.load(); } catch (e) {}
+                    return false;
+                } finally {
+                    introSrcLoading = null;
+                }
+            })();
+
+            return introSrcLoading;
         }
 
         function restartIntroLoop() {
             if (!introVideo || !introVideoActive || introLoopBusy) return;
             introLoopBusy = true;
             try {
-                const t = introVideo.currentTime;
-                // Seek slightly past 0 — some decoders stall on exact 0
-                introVideo.currentTime = t > 0.05 ? 0.001 : 0;
+                introVideo.currentTime = 0.001;
             } catch (_) {}
             const p = introVideo.play();
             if (p && typeof p.then === 'function') {
@@ -1194,9 +1254,8 @@
             if (!introVideo || introLoopArmed) return;
             introLoopArmed = true;
             introVideo.loop = true;
-            introVideo.muted = true;
+            prepareIntroVideoEl();
 
-            // Primary: native loop. Backup: ended + near-end restart (safer for .mov / iOS)
             introVideo.addEventListener('ended', () => {
                 if (!introVideoActive) return;
                 restartIntroLoop();
@@ -1212,18 +1271,18 @@
             });
 
             introVideo.addEventListener('stalled', () => {
-                if (introVideoActive) introVideo.play().catch(() => {});
+                if (introVideoActive) tryPlayIntro();
             });
 
-            introVideo.addEventListener('pause', () => {
-                // If the browser pauses mid-loop while intro is still active, resume
-                if (!introVideoActive || document.hidden) return;
-                requestAnimationFrame(() => {
-                    if (introVideoActive && introVideo.paused) {
-                        introVideo.play().catch(() => {});
-                    }
-                });
+            introVideo.addEventListener('suspend', () => {
+                if (introVideoActive && introVideo.paused) tryPlayIntro();
             });
+        }
+
+        function tryPlayIntro() {
+            if (!introVideo || !introVideoActive) return;
+            prepareIntroVideoEl();
+            return introVideo.play().catch(() => {});
         }
 
         function playIntroVideo() {
@@ -1231,12 +1290,33 @@
             introVideoActive = true;
             document.body.classList.remove('intro-past');
             introVideoWrap?.classList.remove('is-hidden');
-            introVideo.muted = true;
-            introVideo.playsInline = true;
+            prepareIntroVideoEl();
             armIntroVideoLoop();
-            const tryPlay = () => introVideo.play().catch(() => {});
-            if (introVideo.readyState >= 2) tryPlay();
-            else introVideo.addEventListener('loadeddata', tryPlay, { once: true });
+
+            const kick = () => tryPlayIntro();
+
+            // Prefer progressive playback first (don't wait on full 22MB blob)
+            if (introVideo.readyState >= 2) kick();
+            else {
+                introVideo.addEventListener('loadeddata', kick, { once: true });
+                introVideo.addEventListener('canplay', kick, { once: true });
+                try { introVideo.load(); } catch (_) {}
+            }
+            kick();
+            setTimeout(kick, 80);
+            setTimeout(kick, 400);
+
+            // If Safari rejects octet-stream / decode fails, refetch as typed blob
+            const onError = () => {
+                ensureIntroVideoSrc().then(() => kick());
+            };
+            introVideo.addEventListener('error', onError, { once: true });
+            setTimeout(() => {
+                if (!introVideoActive) return;
+                if (introVideo.readyState < 2 || introVideo.error) {
+                    ensureIntroVideoSrc().then(() => kick());
+                }
+            }, 1200);
         }
 
         function leaveIntroVideo() {
@@ -1248,6 +1328,17 @@
                 introVideo.pause();
             }
         }
+
+        // First interaction unlock (Low Power Mode / strict autoplay)
+        function unlockIntroOnGesture() {
+            if (!isMobileIntro() || reduceMotion) return;
+            if (window.scrollY > 8) return;
+            playIntroVideo();
+            tryPlayIntro();
+        }
+        ['touchstart', 'touchend', 'click'].forEach((evt) => {
+            document.addEventListener(evt, unlockIntroOnGesture, { passive: true, once: true });
+        });
 
         function revealChrome() {
             if (chromeRevealed) return;
