@@ -7,6 +7,8 @@
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Index — Hammer Media Research Company</title>
+
+    <!-- code by @yungethernet -->
     <style>
         :root {
             --font-mono:
@@ -439,6 +441,62 @@
 
         .intro-video-wrap {
             display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        body.intro-past .intro-video-wrap,
+        .intro-video-wrap.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .intro-video {
+            display: block;
+            background: #000;
+            object-position: center;
+        }
+
+        /* Desktop index video — centered, responsive */
+        @media (min-width: 869px) {
+            .intro-video-wrap {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: transparent;
+            }
+
+            .intro-video {
+                position: relative;
+                width: min(68vw, 640px);
+                max-width: calc(100vw - 96px);
+                height: auto;
+                max-height: min(62vh, 640px);
+                object-fit: contain;
+                background: transparent;
+            }
+
+            .page-lead {
+                background-color: var(--bg-color);
+            }
+        }
+
+        /* Large desktop (e.g. MacBook Air 15") — ~2× intro video */
+        @media (min-width: 1280px) {
+            .intro-video {
+                width: min(72vw, 1140px);
+                max-width: calc(100vw - 96px);
+                max-height: min(72vh, 1140px);
+            }
         }
 
         section {
@@ -539,6 +597,27 @@
             letter-spacing: 0.04em;
             text-transform: uppercase;
             color: var(--muted-text);
+        }
+
+        .source-link {
+            display: inline-block;
+            margin-top: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--muted-text);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .source-link:hover,
+        .source-link:focus-visible {
+            color: var(--accent);
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            outline: none;
         }
 
         .address-block {
@@ -888,24 +967,7 @@
             /* Full-bleed intro video (index / before scroll) */
             .intro-video-wrap {
                 display: block;
-                position: fixed;
-                inset: 0;
-                z-index: 2;
-                pointer-events: none;
-                overflow: hidden;
-                opacity: 1;
-                visibility: visible;
                 background: #000;
-                transition: opacity 0.5s ease, visibility 0.5s ease;
-                -webkit-transform: translateZ(0);
-                transform: translateZ(0);
-            }
-
-            body.intro-past .intro-video-wrap,
-            .intro-video-wrap.is-hidden {
-                opacity: 0;
-                visibility: hidden;
-                pointer-events: none;
             }
 
             .intro-video {
@@ -915,9 +977,9 @@
                 left: -4.5rem;
                 width: calc(100% + 9rem);
                 height: calc(100% + 9rem);
+                max-width: none;
+                max-height: none;
                 object-fit: cover;
-                object-position: center;
-                background: #000;
             }
 
             .page-lead {
@@ -1020,10 +1082,8 @@
                 preload="auto"
                 disablepictureinpicture
                 x-webkit-airplay="deny"
-            >
-                <source src="https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov" type="video/quicktime" />
-                <source src="https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov" type="video/mp4" />
-            </video>
+                aria-label="Index intro video"
+            ></video>
         </div>
     </div>
 
@@ -1155,6 +1215,12 @@
                     <div class="info-label">HAMMER (spacecraft) — Planetary Defense</div>
                     <div class="section-body">
                         <p>Hyper-velocity Asteroid Mitigation Mission for Emergency Response (HAMMER) is a concept study by NASA on a spacecraft (8 tonnes) capable of detonating a nuclear bomb to deflect an asteroid, if it was on a collision course to Earth. The study is a collaboration between the National Nuclear Security Administration, NASA, and two Energy Department weapons labs.</p>
+                        <a
+                            class="source-link"
+                            href="https://en.wikipedia.org/wiki/HAMMER_(spacecraft)"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >Source — Wikipedia</a>
                     </div>
                 </div>
             </div>
@@ -1204,20 +1270,41 @@
             tickerTimer = setInterval(advanceTicker, 3200);
         }
 
-        // Mobile full-bleed intro video (index, before scroll)
+        // Intro video — desktop: centered mickey.mp4; mobile: full-bleed hammercam afters
         const introVideo = document.getElementById('intro-video');
         const introVideoWrap = document.getElementById('intro-video-wrap');
         const mobileIntroQuery = window.matchMedia('(max-width: 868px), (hover: none) and (pointer: coarse)');
-        const INTRO_VIDEO_URL = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov';
+        const INTRO_VIDEO_MOBILE = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play%20480.mov';
+        const INTRO_VIDEO_DESKTOP = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/mickey.mp4';
         let introVideoActive = false;
         let introLoopBusy = false;
         let introLoopArmed = false;
         let introSrcReady = false;
         let introSrcLoading = null;
         let introBlobUrl = null;
+        let introSrcMode = null;
 
         function isMobileIntro() {
             return mobileIntroQuery.matches;
+        }
+
+        function getIntroMode() {
+            return isMobileIntro() ? 'mobile' : 'desktop';
+        }
+
+        function getIntroVideoSpec() {
+            if (getIntroMode() === 'mobile') {
+                return {
+                    url: INTRO_VIDEO_MOBILE,
+                    mime: 'video/quicktime',
+                    types: ['video/quicktime', 'video/mp4']
+                };
+            }
+            return {
+                url: INTRO_VIDEO_DESKTOP,
+                mime: 'video/mp4',
+                types: ['video/mp4']
+            };
         }
 
         function prepareIntroVideoEl() {
@@ -1232,34 +1319,72 @@
             try { introVideo.volume = 0; } catch (_) {}
         }
 
-        // GitHub serves application/octet-stream — iOS often rejects it.
-        // Fetch → typed blob (video/mp4) so Safari will decode/play.
+        function clearIntroVideoSources() {
+            if (!introVideo) return;
+            while (introVideo.firstChild) introVideo.removeChild(introVideo.firstChild);
+            introVideo.removeAttribute('src');
+            if (introBlobUrl) {
+                try { URL.revokeObjectURL(introBlobUrl); } catch (_) {}
+                introBlobUrl = null;
+            }
+            introSrcReady = false;
+        }
+
+        function applyIntroProgressiveSources(spec) {
+            clearIntroVideoSources();
+            spec.types.forEach((type) => {
+                const source = document.createElement('source');
+                source.src = spec.url;
+                source.type = type;
+                introVideo.appendChild(source);
+            });
+            try { introVideo.load(); } catch (_) {}
+        }
+
+        function syncIntroVideoSources(force) {
+            if (!introVideo) return;
+            const mode = getIntroMode();
+            if (!force && mode === introSrcMode && (introBlobUrl || introVideo.querySelector('source') || introVideo.src)) {
+                return;
+            }
+            introSrcMode = mode;
+            applyIntroProgressiveSources(getIntroVideoSpec());
+        }
+
+        // GitHub serves application/octet-stream — browsers (esp. Safari) may reject it.
+        // Fetch → typed blob so decode/play works.
         function ensureIntroVideoSrc() {
             if (!introVideo) return Promise.resolve(false);
-            if (introSrcReady && (introBlobUrl || introVideo.currentSrc)) return Promise.resolve(true);
+            const spec = getIntroVideoSpec();
+            const mode = getIntroMode();
+            if (introSrcReady && introSrcMode === mode && (introBlobUrl || introVideo.currentSrc)) {
+                return Promise.resolve(true);
+            }
             if (introSrcLoading) return introSrcLoading;
 
             prepareIntroVideoEl();
 
             introSrcLoading = (async () => {
                 try {
-                    const res = await fetch(INTRO_VIDEO_URL, { mode: 'cors', credentials: 'omit' });
+                    const res = await fetch(spec.url, { mode: 'cors', credentials: 'omit' });
                     if (!res.ok) throw new Error('intro fetch ' + res.status);
                     const buf = await res.arrayBuffer();
                     if (introBlobUrl) {
                         try { URL.revokeObjectURL(introBlobUrl); } catch (_) {}
                     }
-                    const blob = new Blob([buf], { type: 'video/quicktime' });
+                    const blob = new Blob([buf], { type: spec.mime });
                     introBlobUrl = URL.createObjectURL(blob);
                     while (introVideo.firstChild) introVideo.removeChild(introVideo.firstChild);
                     introVideo.removeAttribute('src');
                     introVideo.src = introBlobUrl;
                     introVideo.load();
+                    introSrcMode = mode;
                     introSrcReady = true;
                     return true;
                 } catch (_) {
+                    introSrcMode = mode;
                     introSrcReady = true;
-                    try { introVideo.load(); } catch (e) {}
+                    applyIntroProgressiveSources(spec);
                     return false;
                 } finally {
                     introSrcLoading = null;
@@ -1319,16 +1444,17 @@
         }
 
         function playIntroVideo() {
-            if (!introVideo || !isMobileIntro() || reduceMotion) return;
+            if (!introVideo || reduceMotion) return;
             introVideoActive = true;
             document.body.classList.remove('intro-past');
             introVideoWrap?.classList.remove('is-hidden');
             prepareIntroVideoEl();
+            syncIntroVideoSources();
             armIntroVideoLoop();
 
             const kick = () => tryPlayIntro();
 
-            // Prefer progressive playback first (don't wait on full 22MB blob)
+            // Prefer progressive playback first (don't wait on full blob download)
             if (introVideo.readyState >= 2) kick();
             else {
                 introVideo.addEventListener('loadeddata', kick, { once: true });
@@ -1339,7 +1465,7 @@
             setTimeout(kick, 80);
             setTimeout(kick, 400);
 
-            // If Safari rejects octet-stream / decode fails, refetch as typed blob
+            // If browser rejects octet-stream / decode fails, refetch as typed blob
             const onError = () => {
                 ensureIntroVideoSrc().then(() => kick());
             };
@@ -1364,7 +1490,7 @@
 
         // First interaction unlock (Low Power Mode / strict autoplay)
         function unlockIntroOnGesture() {
-            if (!isMobileIntro() || reduceMotion) return;
+            if (reduceMotion) return;
             if (window.scrollY > 8) return;
             playIntroVideo();
             tryPlayIntro();
@@ -1603,13 +1729,14 @@
             if (window.scrollY > 8) {
                 revealChrome();
                 leaveIntroVideo();
-            } else if (isMobileIntro() && !reduceMotion) {
+            } else if (!reduceMotion) {
                 playIntroVideo();
             }
         }, { passive: true });
 
         mobileIntroQuery.addEventListener?.('change', () => {
-            if (isMobileIntro() && window.scrollY <= 8 && !reduceMotion) {
+            if (window.scrollY <= 8 && !reduceMotion) {
+                syncIntroVideoSources(true);
                 playIntroVideo();
             } else {
                 leaveIntroVideo();
