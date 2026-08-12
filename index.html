@@ -7,8 +7,7 @@
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Index — Hammer Media Research Company</title>
-
-    <!-- code by @yungethernet -->
+        <!-- code by @yungethernet -->
     <style>
         :root {
             --font-mono:
@@ -997,6 +996,75 @@
                 display: none;
             }
         }
+
+        /* iPhone 15 Pro–class viewport (~393–430px) — 75% type scale, all text */
+        @media (max-width: 430px) {
+            :root {
+                --type-size: 9px;
+                --type-leading: 15px;
+                --ticker-height: 10px;
+            }
+
+            body {
+                font-size: var(--type-size);
+                line-height: var(--type-leading);
+            }
+
+            .header-meta,
+            .site-nav,
+            .brand-name,
+            .header-utilities,
+            .archive-link,
+            nav ul li a,
+            .section-index,
+            .section-title,
+            .section-body,
+            .info-label,
+            .address-block,
+            .tech-trigger,
+            .tech-index,
+            .tech-name,
+            .tech-desc,
+            .source-link,
+            .ticker-item,
+            pre,
+            code {
+                font-size: var(--type-size);
+                line-height: var(--type-leading);
+            }
+
+            .brand-name .brand-char {
+                font-size: inherit;
+                line-height: var(--type-leading);
+                height: var(--type-leading);
+            }
+
+            .header-meta .ticker-wrap,
+            .header-meta .ticker-item {
+                height: var(--type-leading);
+                line-height: var(--type-leading);
+            }
+
+            .tech-tag {
+                font-size: 7.5px;
+            }
+
+            .brand-modal-close {
+                font-size: 10.5px;
+            }
+
+            .site-nav {
+                padding: 10px 12px;
+            }
+
+            .site-nav ul {
+                gap: 3px;
+            }
+
+            .site-nav ul li a {
+                padding: 1px 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1250,8 +1318,11 @@
         const tickerFrame = document.getElementById('ticker-frame');
         let tickerTimer = null;
         let tickerIndex = 0;
-        const tickerStep = 20;
         let chromeRevealed = false;
+        const tickerStep = () => {
+            const item = tickerFrame?.querySelector('.ticker-item');
+            return item ? item.offsetHeight || 20 : 20;
+        };
 
         function freezeTickerOnIndex() {
             tickerIndex = 0;
@@ -1262,7 +1333,7 @@
             const items = tickerFrame?.querySelectorAll('.ticker-item');
             if (!tickerFrame || !items?.length) return;
             tickerIndex = (tickerIndex + 1) % items.length;
-            tickerFrame.style.transform = 'translateY(' + (-tickerIndex * tickerStep) + 'px)';
+            tickerFrame.style.transform = 'translateY(' + (-tickerIndex * tickerStep()) + 'px)';
         }
 
         function startTicker() {
