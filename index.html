@@ -707,7 +707,8 @@
             opacity: 0.85;
         }
 
-        /* Hammercam: mobile ~2× base +10%; desktop 75% of 3× */
+        /* Hammercam: mobile ~2× base +10%; desktop 75% of 3×
+           Center with margin:auto only — CSS transform blanks <video> on iOS Safari */
         .tech-media {
             margin: 8px auto 20px;
             width: min(792px, calc(100vw - 32px));
@@ -715,8 +716,6 @@
             padding: 0;
             box-sizing: border-box;
             position: relative;
-            left: 50%;
-            transform: translateX(-50%);
         }
 
         .tech-media video {
@@ -725,6 +724,8 @@
             height: auto;
             max-height: 792px;
             object-fit: contain;
+            -webkit-transform: none;
+            transform: none;
         }
 
         @media (min-width: 869px) {
@@ -1214,16 +1215,13 @@
                                     <div class="tech-media">
                                         <video
                                             id="hammercam-video"
-                                            src="https://github.com/ta222222/hammer/raw/refs/heads/main/hammer cam afters play.mp4"
                                             muted
                                             loop
                                             playsinline
                                             webkit-playsinline
                                             preload="metadata"
                                             aria-label="Hammercam sample"
-                                        >
-                                            <source src="https://github.com/ta222222/hammer/raw/refs/heads/main/hammercamhagg.mp4" type="video/mp4" />
-                                        </video>
+                                        ></video>
                                     </div>
                                     <p class="tech-desc">Capture and imaging tooling for visual research — optics experiments, documentation, and image pipelines.</p>
                                 </div>
@@ -2002,6 +2000,53 @@
         // Tech accordion + Hammercam video playback
         const techItems = document.querySelectorAll('.tech-item');
         const techSection = document.getElementById('section-tech');
+        const hammercamVideo = document.getElementById('hammercam-video');
+        // Mobile listed tech: mickey.mp4; desktop: hammercam afters
+        const HAMMERCAM_VIDEO_MOBILE = INTRO_VIDEO_DESKTOP;
+        const HAMMERCAM_VIDEO_DESKTOP = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer cam afters play.mp4';
+        const HAMMERCAM_VIDEO_DESKTOP_FALLBACK = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammercamhagg.mp4';
+        let hammercamSrcMode = null;
+
+        function syncHammercamVideoSrc(force) {
+            if (!hammercamVideo) return;
+            const mode = isMobileIntro() ? 'mobile' : 'desktop';
+            if (!force && hammercamSrcMode === mode && hammercamVideo.querySelector('source')) return;
+            hammercamSrcMode = mode;
+
+            const wasPaused = hammercamVideo.paused;
+            hammercamVideo.pause();
+            while (hammercamVideo.firstChild) hammercamVideo.removeChild(hammercamVideo.firstChild);
+            hammercamVideo.removeAttribute('src');
+
+            if (mode === 'mobile') {
+                const source = document.createElement('source');
+                source.src = HAMMERCAM_VIDEO_MOBILE;
+                source.type = 'video/mp4';
+                hammercamVideo.appendChild(source);
+            } else {
+                const primary = document.createElement('source');
+                primary.src = HAMMERCAM_VIDEO_DESKTOP;
+                primary.type = 'video/mp4';
+                hammercamVideo.appendChild(primary);
+                const fallback = document.createElement('source');
+                fallback.src = HAMMERCAM_VIDEO_DESKTOP_FALLBACK;
+                fallback.type = 'video/mp4';
+                hammercamVideo.appendChild(fallback);
+            }
+
+            hammercamVideo.muted = true;
+            hammercamVideo.playsInline = true;
+            hammercamVideo.setAttribute('muted', '');
+            hammercamVideo.setAttribute('playsinline', '');
+            hammercamVideo.setAttribute('webkit-playsinline', '');
+            try { hammercamVideo.load(); } catch (_) {}
+            if (!wasPaused && document.querySelector('.tech-item[data-tech="hammercam"].is-open')) {
+                playTechVideo(hammercamVideo);
+            }
+        }
+
+        syncHammercamVideoSrc(true);
+        mobileIntroQuery.addEventListener?.('change', () => syncHammercamVideoSrc(true));
 
         function stopTechVideos() {
             document.querySelectorAll('#section-tech video').forEach((v) => {
@@ -2012,7 +2057,11 @@
 
         function playTechVideo(video) {
             if (!video) return;
+            if (video === hammercamVideo) syncHammercamVideoSrc();
             video.muted = true;
+            video.playsInline = true;
+            video.setAttribute('playsinline', '');
+            video.setAttribute('webkit-playsinline', '');
             const tryPlay = () => {
                 video.play().catch(() => {});
             };
