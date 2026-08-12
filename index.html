@@ -1437,6 +1437,60 @@
             });
         }
 
+        function resetToIndex() {
+            // Full reset — top of page as if freshly loaded
+            if (brandModal?.classList.contains('is-open')) closeBrandModal();
+            if (typeof closeAllTechPanels === 'function') closeAllTechPanels();
+
+            window.scrollTo({ top: 0, behavior: 'auto' });
+
+            if (revealObserver) {
+                revealObserver.disconnect();
+                revealObserver = null;
+            }
+
+            document.querySelectorAll('.reveal.is-visible').forEach((el) => {
+                el.classList.remove('is-visible');
+            });
+
+            document.body.classList.remove('intro-chrome', 'archive-visible', 'intro-past', 'intro-nav');
+            document.body.classList.add('intro-index');
+            chromeRevealed = false;
+
+            clearInterval(tickerTimer);
+            tickerTimer = null;
+            freezeTickerOnIndex();
+
+            introScrollArmed = !reduceMotion;
+            introShortScrolls = 0;
+            introBurstDelta = 0;
+            clearTimeout(introBurstTimer);
+            introBurstTimer = null;
+            touchStartY = null;
+
+            if (progressEl) progressEl.style.width = '0%';
+
+            navLinks.forEach((link) => link.classList.remove('active'));
+            if (sectionIndexEl) {
+                const current = sectionIndexEl.querySelector('.index-current');
+                if (current) current.textContent = '00';
+            }
+
+            if (reduceMotion) {
+                document.body.classList.add('intro-nav', 'intro-chrome', 'intro-past');
+                chromeRevealed = true;
+                document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+                leaveIntroVideo();
+            } else {
+                playIntroVideo();
+                setTimeout(() => {
+                    if (window.scrollY <= 8) document.body.classList.add('intro-nav');
+                }, 380);
+            }
+
+            updateActiveNav();
+        }
+
         // Intro scroll: 3 short scrolls OR 1 long scroll → snap to first section
         let introScrollArmed = !reduceMotion;
         let introShortScrolls = 0;
@@ -1842,6 +1896,14 @@
             if (numberMap[e.key]) {
                 e.preventDefault();
                 openNavSection(numberMap[e.key]);
+                return;
+            }
+
+            if (e.key === '0') {
+                // Desktop only — skip on mobile / coarse touch
+                if (mobileIntroQuery.matches || window.matchMedia('(max-width: 868px)').matches) return;
+                e.preventDefault();
+                resetToIndex();
                 return;
             }
 
