@@ -515,6 +515,16 @@
             display: grid;
             gap: 40px;
             max-width: 620px;
+            margin-top: 40px;
+        }
+
+        .section-body + .info-grid {
+            margin-top: 40px;
+        }
+
+        .info-grid:first-child,
+        .section-title + .info-grid {
+            margin-top: 0;
         }
 
         .info-block {
@@ -956,7 +966,7 @@
         <nav class="site-nav" aria-label="Section navigation">
             <div class="section-index" id="section-index" aria-live="polite">
                 <span class="index-current">00</span>
-                <span class="index-total">/ 05</span>
+                <span class="index-total">/ 06</span>
             </div>
             <ul>
                 <li>
@@ -977,6 +987,11 @@
                 <li>
                     <a href="#section-tech" class="nav-link">
                         <span class="nav-label">Listed Technology</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#section-aerospace" class="nav-link">
+                        <span class="nav-label">Aerospace</span>
                     </a>
                 </li>
                 <li>
@@ -1128,7 +1143,25 @@
         </div>
     </section>
 
-    <section id="section-info" aria-labelledby="title-info" data-index="05">
+    <section id="section-aerospace" aria-labelledby="title-aerospace" data-index="05">
+        <div class="section-inner">
+            <div class="section-title reveal" id="title-aerospace">Aerospace</div>
+            <div class="section-body reveal reveal-delay-1">
+                <p>A new and future line of inquiry sits in aerospace: deep study of space and Earth as linked systems — orbital mechanics, remote sensing, planetary environments, and the infrastructures that observe, model, and intervene at planetary scale.</p>
+                <p>Research here indexes concept studies, defense architectures, and cross-agency work where media, computation, and physical systems meet beyond the atmosphere.</p>
+            </div>
+            <div class="info-grid reveal reveal-delay-2">
+                <div class="info-block">
+                    <div class="info-label">HAMMER (spacecraft) — Planetary Defense</div>
+                    <div class="section-body">
+                        <p>Hyper-velocity Asteroid Mitigation Mission for Emergency Response (HAMMER) is a concept study by NASA on a spacecraft (8 tonnes) capable of detonating a nuclear bomb to deflect an asteroid, if it was on a collision course to Earth. The study is a collaboration between the National Nuclear Security Administration, NASA, and two Energy Department weapons labs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-info" aria-labelledby="title-info" data-index="06">
         <div class="section-inner">
             <div class="section-title reveal" id="title-info">Information</div>
             <div class="info-grid">
@@ -1583,7 +1616,7 @@
         brandModalBackdrop?.addEventListener('click', closeBrandModal);
 
         const navLinks = document.querySelectorAll('.nav-link');
-        const sections = ['section-one', 'section-two', 'section-three', 'section-tech', 'section-info'];
+        const sections = ['section-one', 'section-two', 'section-three', 'section-tech', 'section-aerospace', 'section-info'];
         const sectionIndexEl = document.getElementById('section-index');
         const progressEl = document.getElementById('scroll-progress');
         const mobileNavQuery = window.matchMedia('(max-width: 868px)');
@@ -1805,7 +1838,7 @@
                 return;
             }
 
-            const numberMap = { '1': 'section-one', '2': 'section-two', '3': 'section-three', '4': 'section-tech', '5': 'section-info' };
+            const numberMap = { '1': 'section-one', '2': 'section-two', '3': 'section-three', '4': 'section-tech', '5': 'section-aerospace', '6': 'section-info' };
             if (numberMap[e.key]) {
                 e.preventDefault();
                 openNavSection(numberMap[e.key]);
