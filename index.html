@@ -65,6 +65,10 @@
         }
 
         @media (hover: hover) and (pointer: fine) {
+            html.dot-cursor,
+            html.dot-cursor *,
+            html.dot-cursor *::before,
+            html.dot-cursor *::after,
             body.dot-cursor,
             body.dot-cursor * {
                 cursor: none !important;
@@ -99,6 +103,7 @@
             body:not(.intro-index) .header-meta,
             body:not(.intro-nav) .site-nav,
             body:not(.intro-chrome) .scroll-progress,
+            body:not(.intro-index) .time-chrome,
             body:not(.archive-visible) .header-utilities {
                 opacity: 1 !important;
                 pointer-events: auto !important;
@@ -111,8 +116,9 @@
         .header-meta,
         .site-nav,
         .header-utilities,
-        .scroll-progress {
-            transition: opacity 0.4s ease, visibility 0.4s ease;
+        .scroll-progress,
+        .time-chrome {
+            transition: opacity 0.4s ease, visibility 0.4s ease, bottom 0.35s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         body:not(.intro-index) .header-meta {
@@ -157,6 +163,18 @@
         }
 
         body.archive-visible .header-utilities {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        body:not(.intro-index) .time-chrome {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        body.intro-index .time-chrome {
             opacity: 1;
             visibility: visible;
             pointer-events: auto;
@@ -332,6 +350,53 @@
             text-decoration: underline;
             text-underline-offset: 4px;
             outline: none;
+        }
+
+        /* --- WORLD TIME TICKER (bottom-right) --- */
+        .time-chrome {
+            position: fixed;
+            right: max(24px, env(safe-area-inset-right));
+            bottom: max(24px, env(safe-area-inset-bottom));
+            z-index: var(--ui-chrome-z);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 20px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-color);
+            text-align: right;
+            pointer-events: auto;
+            transition: opacity 0.4s ease, visibility 0.4s ease, bottom 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Lift above Archive when it appears on Information */
+        body.archive-visible .time-chrome {
+            bottom: max(52px, calc(24px + 28px + env(safe-area-inset-bottom)));
+        }
+
+        .time-ticker-wrap {
+            height: 20px;
+            overflow: hidden;
+            cursor: default;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .time-ticker-frame {
+            transition: transform 0.3s cubic-bezier(0.3, 0, 0.1, 1);
+            will-change: transform;
+        }
+
+        .time-ticker-item {
+            height: 20px;
+            line-height: 20px;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .time-ticker-item .time-city {
+            color: var(--muted-text);
+            margin-right: 0.55em;
         }
 
         nav ul {
@@ -521,6 +586,14 @@
             margin: 0 auto;
         }
 
+        /* Let Hammercam media break out and center on desktop */
+        #section-tech .section-inner,
+        #section-tech .info-grid,
+        #section-tech .info-block,
+        #section-tech .tech-list {
+            overflow: visible;
+        }
+
         .section-title {
             font-family: var(--font-mono);
             font-size: 12px;
@@ -707,15 +780,16 @@
             opacity: 0.85;
         }
 
-        /* Hammercam: mobile ~2× base +10%; desktop 75% of 3×
-           Center with margin:auto only — CSS transform blanks <video> on iOS Safari */
+        /* Hammercam media — no transform on <video> (iOS blanks it) */
         .tech-media {
             margin: 8px auto 20px;
             width: min(792px, calc(100vw - 32px));
-            max-width: min(792px, calc(100vw - 32px));
+            max-width: 100%;
             padding: 0;
             box-sizing: border-box;
             position: relative;
+            display: flex;
+            justify-content: center;
         }
 
         .tech-media video {
@@ -728,20 +802,33 @@
             transform: none;
         }
 
+        /* Desktop: break out of narrow tech column and center in the viewport */
         @media (min-width: 869px) {
+            .tech-item[data-tech="hammercam"].is-open .tech-panel,
+            .tech-item[data-tech="hammercam"].is-open .tech-panel-inner {
+                overflow: visible;
+            }
+
             .tech-media {
-                width: min(810px, calc(100vw - 48px));
-                max-width: min(810px, calc(100vw - 48px));
-                margin: 12px auto 24px;
+                width: 100vw;
+                max-width: 100vw;
+                margin: 12px 0 24px;
+                margin-left: calc(50% - 50vw);
+                padding: 0 24px;
+                box-sizing: border-box;
             }
 
             .tech-media video {
+                width: min(810px, calc(100vw - 48px));
+                max-width: min(810px, calc(100vw - 48px));
                 max-height: 810px;
             }
         }
 
         .cursor-dot {
             position: fixed;
+            top: 0;
+            left: 0;
             width: 6px;
             height: 6px;
             border-radius: 50%;
@@ -750,8 +837,9 @@
             z-index: calc(var(--ui-chrome-z) + 2);
             transform: translate(-50%, -50%);
             opacity: 0;
-            transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, background 0.2s ease;
+            transition: opacity 0.15s ease, width 0.15s ease, height 0.15s ease, background 0.15s ease;
             mix-blend-mode: multiply;
+            will-change: transform, width, height, opacity;
         }
 
         .cursor-dot.is-active {
@@ -947,6 +1035,25 @@
                 background: none;
             }
 
+            .time-chrome {
+                right: max(12px, env(safe-area-inset-right));
+                bottom: max(12px, env(safe-area-inset-bottom));
+                /* Match index ticker + nav link type */
+                font-size: 12px;
+                line-height: 20px;
+            }
+
+            /* Sit above Archive when Information reveals it */
+            body.archive-visible .time-chrome {
+                bottom: max(44px, calc(12px + 28px + env(safe-area-inset-bottom)));
+            }
+
+            .time-ticker-wrap,
+            .time-ticker-item {
+                height: 20px;
+                line-height: 20px;
+            }
+
             /* Extra bottom padding so content clears fixed nav / archive */
             section {
                 padding-top: max(100px, calc(80px + env(safe-area-inset-top)));
@@ -956,15 +1063,15 @@
             }
 
             body.dot-cursor,
-            body.dot-cursor * {
+            body.dot-cursor *,
+            html.dot-cursor,
+            html.dot-cursor * {
                 cursor: auto !important;
             }
 
             .cursor-dot {
-                display: none;
+                display: none !important;
             }
-
-            /* Full-bleed intro video (index / before scroll) */
             .intro-video-wrap {
                 display: block;
                 background: #000;
@@ -989,12 +1096,14 @@
 
         @media (hover: none) {
             body.dot-cursor,
-            body.dot-cursor * {
+            body.dot-cursor *,
+            html.dot-cursor,
+            html.dot-cursor * {
                 cursor: auto !important;
             }
 
             .cursor-dot {
-                display: none;
+                display: none !important;
             }
         }
 
@@ -1016,6 +1125,8 @@
             .brand-name,
             .header-utilities,
             .archive-link,
+            .time-chrome,
+            .time-ticker-item,
             nav ul li a,
             .section-index,
             .section-title,
@@ -1041,7 +1152,9 @@
             }
 
             .header-meta .ticker-wrap,
-            .header-meta .ticker-item {
+            .header-meta .ticker-item,
+            .time-ticker-wrap,
+            .time-ticker-item {
                 height: var(--type-leading);
                 line-height: var(--type-leading);
             }
@@ -1089,7 +1202,7 @@
                 <div class="ticker-frame" id="ticker-frame">
                     <div class="ticker-item"><span class="ticker-index-label">index</span></div>
                     <div class="ticker-item">status: active</div>
-                    <div class="ticker-item">online: access</div>
+                    <div class="ticker-item">server: online</div>
                 </div>
             </div>
         </div>
@@ -1097,7 +1210,7 @@
         <nav class="site-nav" aria-label="Section navigation">
             <div class="section-index" id="section-index" aria-live="polite">
                 <span class="index-current">00</span>
-                <span class="index-total">/ 06</span>
+                <span class="index-total">/ 07</span>
             </div>
             <ul>
                 <li>
@@ -1121,6 +1234,11 @@
                     </a>
                 </li>
                 <li>
+                    <a href="#section-software" class="nav-link">
+                        <span class="nav-label">Software Development</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#section-aerospace" class="nav-link">
                         <span class="nav-label">Aerospace</span>
                     </a>
@@ -1136,6 +1254,12 @@
             <a class="archive-link" href="#section-one" id="archive-link">Archive</a>
         </div>
     </header>
+
+    <div class="time-chrome" id="time-chrome" aria-label="World clocks">
+        <div class="time-ticker-wrap" id="time-ticker-wrap" title="Click to advance">
+            <div class="time-ticker-frame" id="time-ticker-frame"></div>
+        </div>
+    </div>
 
     <div class="page-lead" aria-hidden="true">
         <div class="intro-video-wrap" id="intro-video-wrap">
@@ -1269,7 +1393,17 @@
         </div>
     </section>
 
-    <section id="section-aerospace" aria-labelledby="title-aerospace" data-index="05">
+    <section id="section-software" aria-labelledby="title-software" data-index="05">
+        <div class="section-inner">
+            <div class="section-title reveal" id="title-software">Software Development</div>
+            <div class="section-body reveal reveal-delay-1">
+                <p>Software development is treated as research infrastructure: tools, services, and interfaces built to support indexing, imaging pipelines, secure access, and cross-project workflows inside Hammer.</p>
+                <p>Work here stays close to the database — prototypes, internal systems, and production code that keep experiments runnable, logged, and reusable rather than one-off demos.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="section-aerospace" aria-labelledby="title-aerospace" data-index="06">
         <div class="section-inner">
             <div class="section-title reveal" id="title-aerospace">Aerospace</div>
             <div class="section-body reveal reveal-delay-1">
@@ -1293,7 +1427,7 @@
         </div>
     </section>
 
-    <section id="section-info" aria-labelledby="title-info" data-index="06">
+    <section id="section-info" aria-labelledby="title-info" data-index="07">
         <div class="section-inner">
             <div class="section-title reveal" id="title-info">Information</div>
             <div class="info-grid">
@@ -1343,8 +1477,9 @@
         const introVideo = document.getElementById('intro-video');
         const introVideoWrap = document.getElementById('intro-video-wrap');
         const mobileIntroQuery = window.matchMedia('(max-width: 868px), (hover: none) and (pointer: coarse)');
-        const INTRO_VIDEO_MOBILE = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer cam afters play.mp4';
-        const INTRO_VIDEO_DESKTOP = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/mickey.mp4';
+        const INTRO_VIDEO_MOBILE = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play.mp4';
+        const MICKEY_VIDEO = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/mickey.mp4';
+        const INTRO_VIDEO_DESKTOP = MICKEY_VIDEO;
         let introVideoActive = false;
         let introLoopBusy = false;
         let introLoopArmed = false;
@@ -1365,8 +1500,8 @@
             if (getIntroMode() === 'mobile') {
                 return {
                     url: INTRO_VIDEO_MOBILE,
-                    mime: 'video/quicktime',
-                    types: ['video/quicktime', 'video/mp4']
+                    mime: 'video/mp4',
+                    types: ['video/mp4', 'video/quicktime']
                 };
             }
             return {
@@ -1656,6 +1791,11 @@
             tickerTimer = null;
             freezeTickerOnIndex();
 
+            clearInterval(timeTickerTimer);
+            timeTickerTimer = null;
+            freezeTimeTickerOnIndex();
+            if (typeof startTimeTicker === 'function') startTimeTicker();
+
             introScrollArmed = !reduceMotion;
             introShortScrolls = 0;
             introBurstDelta = 0;
@@ -1866,7 +2006,7 @@
         brandModalBackdrop?.addEventListener('click', closeBrandModal);
 
         const navLinks = document.querySelectorAll('.nav-link');
-        const sections = ['section-one', 'section-two', 'section-three', 'section-tech', 'section-aerospace', 'section-info'];
+        const sections = ['section-one', 'section-two', 'section-three', 'section-tech', 'section-software', 'section-aerospace', 'section-info'];
         const sectionIndexEl = document.getElementById('section-index');
         const progressEl = document.getElementById('scroll-progress');
         const mobileNavQuery = window.matchMedia('(max-width: 868px)');
@@ -1997,13 +2137,137 @@
             tickerTimer = setInterval(advanceTicker, 3200);
         });
 
+        // Bottom-right world time ticker — LONDON / LA / JAPAN / SPAIN
+        const timeTickerFrame = document.getElementById('time-ticker-frame');
+        const timeTickerWrap = document.getElementById('time-ticker-wrap');
+        const timeMobileQuery = window.matchMedia('(max-width: 868px)');
+        const WORLD_CLOCKS = [
+            { city: 'Los Angeles', short: 'LA', tz: 'America/Los_Angeles' },
+            { city: 'London', short: 'London', tz: 'Europe/London' },
+            { city: 'Spain', short: 'Spain', tz: 'Europe/Madrid' },
+            { city: 'Japan', short: 'Japan', tz: 'Asia/Tokyo' }
+        ];
+        let timeTickerIndex = 0;
+        let timeTickerTimer = null;
+        let timeClockTimer = null;
+        let timeTickerBuilt = false;
+
+        function isTimeMobile() {
+            return timeMobileQuery.matches;
+        }
+
+        function formatWorldTime(date, timeZone, short) {
+            try {
+                if (short) {
+                    return new Intl.DateTimeFormat('en-US', {
+                        timeZone,
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    }).format(date);
+                }
+                return new Intl.DateTimeFormat('en-US', {
+                    timeZone,
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                }).format(date);
+            } catch (_) {
+                return '--:--';
+            }
+        }
+
+        function timeTickerStep() {
+            const item = timeTickerFrame?.querySelector('.time-ticker-item');
+            return item ? item.offsetHeight || 20 : 20;
+        }
+
+        function buildWorldClockItems() {
+            if (!timeTickerFrame) return;
+            const mobile = isTimeMobile();
+            timeTickerFrame.innerHTML = WORLD_CLOCKS.map((c, i) => {
+                const label = mobile ? c.short : c.city;
+                return (
+                    '<div class="time-ticker-item" data-i="' + i + '">' +
+                    '<span class="time-city">' + label + '</span>' +
+                    '<span class="time-clock">' + (mobile ? '--:--' : '--:--:--') + '</span>' +
+                    '</div>'
+                );
+            }).join('');
+            timeTickerBuilt = true;
+            const max = WORLD_CLOCKS.length;
+            if (timeTickerIndex >= max) timeTickerIndex = 0;
+            timeTickerFrame.style.transform = 'translateY(' + (-timeTickerIndex * timeTickerStep()) + 'px)';
+        }
+
+        function updateWorldClockTimes() {
+            if (!timeTickerFrame) return;
+            if (!timeTickerBuilt || timeTickerFrame.children.length !== WORLD_CLOCKS.length) {
+                buildWorldClockItems();
+            }
+            const now = new Date();
+            const mobile = isTimeMobile();
+            timeTickerFrame.querySelectorAll('.time-ticker-item').forEach((item) => {
+                const i = Number(item.getAttribute('data-i'));
+                const c = WORLD_CLOCKS[i];
+                const clock = item.querySelector('.time-clock');
+                if (!c || !clock) return;
+                clock.textContent = formatWorldTime(now, c.tz, mobile);
+            });
+            timeTickerFrame.style.transform = 'translateY(' + (-timeTickerIndex * timeTickerStep()) + 'px)';
+        }
+
+        function renderWorldClocks() {
+            updateWorldClockTimes();
+        }
+
+        function freezeTimeTickerOnIndex() {
+            timeTickerIndex = 0;
+            buildWorldClockItems();
+            updateWorldClockTimes();
+        }
+
+        function advanceTimeTicker() {
+            if (!timeTickerFrame || !WORLD_CLOCKS.length) return;
+            timeTickerIndex = (timeTickerIndex + 1) % WORLD_CLOCKS.length;
+            timeTickerFrame.style.transform = 'translateY(' + (-timeTickerIndex * timeTickerStep()) + 'px)';
+        }
+
+        function startTimeTicker() {
+            buildWorldClockItems();
+            updateWorldClockTimes();
+            if (!timeClockTimer) {
+                timeClockTimer = setInterval(updateWorldClockTimes, 1000);
+            }
+            if (timeTickerTimer || reduceMotion) return;
+            timeTickerTimer = setInterval(advanceTimeTicker, 3200);
+        }
+
+        timeTickerWrap?.addEventListener('click', () => {
+            advanceTimeTicker();
+            clearInterval(timeTickerTimer);
+            timeTickerTimer = null;
+            if (!reduceMotion) {
+                timeTickerTimer = setInterval(advanceTimeTicker, 3200);
+            }
+        });
+
+        timeMobileQuery.addEventListener?.('change', () => {
+            timeTickerBuilt = false;
+            buildWorldClockItems();
+            updateWorldClockTimes();
+        });
+
+        startTimeTicker();
+
         // Tech accordion + Hammercam video playback
         const techItems = document.querySelectorAll('.tech-item');
         const techSection = document.getElementById('section-tech');
         const hammercamVideo = document.getElementById('hammercam-video');
         // Mobile listed tech: mickey.mp4; desktop: hammercam afters
-        const HAMMERCAM_VIDEO_MOBILE = INTRO_VIDEO_DESKTOP;
-        const HAMMERCAM_VIDEO_DESKTOP = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer cam afters play.mp4';
+        const HAMMERCAM_VIDEO_MOBILE = MICKEY_VIDEO;
+        const HAMMERCAM_VIDEO_DESKTOP = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play.mp4';
         const HAMMERCAM_VIDEO_DESKTOP_FALLBACK = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammercamhagg.mp4';
         let hammercamSrcMode = null;
 
@@ -2139,7 +2403,7 @@
                 return;
             }
 
-            const numberMap = { '1': 'section-one', '2': 'section-two', '3': 'section-three', '4': 'section-tech', '5': 'section-aerospace', '6': 'section-info' };
+            const numberMap = { '1': 'section-one', '2': 'section-two', '3': 'section-three', '4': 'section-tech', '5': 'section-software', '6': 'section-aerospace', '7': 'section-info' };
             if (numberMap[e.key]) {
                 e.preventDefault();
                 openNavSection(numberMap[e.key]);
@@ -2169,41 +2433,89 @@
             }
         });
 
-        // Dot-only cursor (desktop)
+        // Dot-only cursor (desktop / fine pointer)
         const cursor = document.getElementById('cursor-dot');
-        const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-        if (cursor && canHover) {
-            document.body.classList.add('dot-cursor');
+        const finePointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+        const narrowViewQuery = window.matchMedia('(max-width: 868px)');
+
+        function canUseDotCursor() {
+            return finePointerQuery.matches && !narrowViewQuery.matches;
+        }
+
+        function setDotCursorEnabled(on) {
+            document.documentElement.classList.toggle('dot-cursor', on);
+            document.body.classList.toggle('dot-cursor', on);
+            if (!cursor) return;
+            if (!on) {
+                cursor.classList.remove('is-active', 'is-hover', 'is-hidden');
+                cursor.style.transform = 'translate(-50%, -50%)';
+            }
+        }
+
+        if (cursor) {
             let hideDot = false;
+            let cursorX = 0;
+            let cursorY = 0;
+            let cursorRaf = 0;
+            let listenersBound = false;
 
-            window.addEventListener('mousemove', (e) => {
-                cursor.style.left = e.clientX + 'px';
-                cursor.style.top = e.clientY + 'px';
+            const paintCursor = () => {
+                cursorRaf = 0;
+                cursor.style.transform = 'translate(' + cursorX + 'px, ' + cursorY + 'px) translate(-50%, -50%)';
+            };
+
+            const onMove = (e) => {
+                if (!canUseDotCursor()) return;
+                cursorX = e.clientX;
+                cursorY = e.clientY;
+                if (!cursorRaf) cursorRaf = requestAnimationFrame(paintCursor);
                 if (!hideDot) cursor.classList.add('is-active');
-            }, { passive: true });
+            };
 
-            document.addEventListener('mouseleave', () => {
-                cursor.classList.remove('is-active');
-            });
+            const onLeave = () => {
+                cursor.classList.remove('is-active', 'is-hover');
+            };
 
-            document.querySelectorAll('a, button, .tech-trigger, .ticker-wrap').forEach((el) => {
-                if (el.classList.contains('brand-name')) return;
-                el.addEventListener('mouseenter', () => cursor.classList.add('is-hover'));
-                el.addEventListener('mouseleave', () => cursor.classList.remove('is-hover'));
-            });
-
-            brandBtn?.querySelectorAll('.brand-char:not(.brand-space)').forEach((el) => {
-                el.addEventListener('mouseenter', () => {
-                    hideDot = true;
-                    cursor.classList.add('is-hidden');
-                    cursor.classList.remove('is-active', 'is-hover');
+            const bindHoverTargets = () => {
+                document.querySelectorAll('a, button, .tech-trigger, .ticker-wrap, .time-ticker-wrap').forEach((el) => {
+                    if (el.classList.contains('brand-name') || el.dataset.dotBound) return;
+                    el.dataset.dotBound = '1';
+                    el.addEventListener('mouseenter', () => {
+                        if (canUseDotCursor() && !hideDot) cursor.classList.add('is-hover');
+                    });
+                    el.addEventListener('mouseleave', () => cursor.classList.remove('is-hover'));
                 });
-                el.addEventListener('mouseleave', () => {
-                    hideDot = false;
-                    cursor.classList.remove('is-hidden');
-                    cursor.classList.add('is-active');
+
+                brandBtn?.querySelectorAll('.brand-char:not(.brand-space)').forEach((el) => {
+                    if (el.dataset.dotBound) return;
+                    el.dataset.dotBound = '1';
+                    el.addEventListener('mouseenter', () => {
+                        hideDot = true;
+                        cursor.classList.add('is-hidden');
+                        cursor.classList.remove('is-active', 'is-hover');
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        hideDot = false;
+                        cursor.classList.remove('is-hidden');
+                        if (canUseDotCursor()) cursor.classList.add('is-active');
+                    });
                 });
-            });
+            };
+
+            const syncDotCursor = () => {
+                const on = canUseDotCursor();
+                setDotCursorEnabled(on);
+                if (on && !listenersBound) {
+                    window.addEventListener('mousemove', onMove, { passive: true });
+                    document.addEventListener('mouseleave', onLeave);
+                    listenersBound = true;
+                }
+                if (on) bindHoverTargets();
+            };
+
+            syncDotCursor();
+            finePointerQuery.addEventListener?.('change', syncDotCursor);
+            narrowViewQuery.addEventListener?.('change', syncDotCursor);
         }
     </script>
 </body>
