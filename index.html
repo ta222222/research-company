@@ -11,12 +11,19 @@
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/build/three.module.js" crossorigin>
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/loaders/GLTFLoader.js" crossorigin>
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js" crossorigin>
-    <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin>
+    <link rel="preload" as="video" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/mickey.mp4" type="video/mp4" media="(min-width: 869px)" fetchpriority="high">
+    <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin fetchpriority="low">
     <script>
-        window.__keepModelFetch = fetch(
-            'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb',
-            { mode: 'cors', credentials: 'omit' }
-        );
+        (function () {
+            var GLB = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
+            window.__startKeepModelFetch = function () {
+                if (!window.__keepModelFetch) {
+                    window.__keepModelFetch = fetch(GLB, { mode: 'cors', credentials: 'omit' });
+                }
+                return window.__keepModelFetch;
+            };
+            setTimeout(function () { window.__startKeepModelFetch(); }, 1200);
+        })();
     </script>
     <style>
         :root {
@@ -1358,9 +1365,9 @@
             }
 
             .keep-stage-frame {
-                width: 666px;
-                height: 666px;
-                flex: 0 0 666px;
+                width: 888px;
+                height: 888px;
+                flex: 0 0 888px;
             }
         }
 
@@ -1371,6 +1378,19 @@
                 flex-basis: 31.5rem;
                 max-width: calc(100vw - 2rem);
                 max-height: calc(100vw - 2rem);
+            }
+
+            .keep-load {
+                bottom: -28px;
+                left: 8px;
+                right: 8px;
+            }
+
+            .keep-hint {
+                position: relative;
+                left: auto;
+                right: auto;
+                bottom: auto;
             }
         }
     </style>
@@ -1473,10 +1493,25 @@
                 playsinline
                 webkit-playsinline
                 preload="auto"
+                fetchpriority="high"
                 disablepictureinpicture
                 x-webkit-airplay="deny"
                 aria-label="Index intro video"
             ></video>
+            <script>
+                (function () {
+                    var v = document.getElementById('intro-video');
+                    if (!v) return;
+                    var mobile = window.matchMedia('(max-width: 868px), (hover: none) and (pointer: coarse)').matches;
+                    var mickey = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/mickey.mp4';
+                    var afters = 'https://cdn.jsdelivr.net/gh/ta222222/hammer@main/hammer%20cam%20afters%20play.mp4';
+                    v.src = mobile ? afters : mickey;
+                    window.__introVideoUrl = v.src;
+                    try { v.load(); } catch (_) {}
+                    var p = v.play();
+                    if (p && p.catch) p.catch(function () {});
+                })();
+            </script>
         </div>
     </div>
 
@@ -1710,8 +1745,10 @@
         const introVideo = document.getElementById('intro-video');
         const introVideoWrap = document.getElementById('intro-video-wrap');
         const mobileIntroQuery = window.matchMedia('(max-width: 868px), (hover: none) and (pointer: coarse)');
-        const INTRO_VIDEO_MOBILE = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play.mp4';
-        const MICKEY_VIDEO = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/mickey.mp4';
+        const INTRO_VIDEO_MOBILE = 'https://cdn.jsdelivr.net/gh/ta222222/hammer@main/hammer%20cam%20afters%20play.mp4';
+        const INTRO_VIDEO_MOBILE_FALLBACK = 'https://raw.githubusercontent.com/ta222222/hammer/refs/heads/main/hammer%20cam%20afters%20play.mp4';
+        const MICKEY_VIDEO = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/mickey.mp4';
+        const MICKEY_VIDEO_FALLBACK = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/mickey.mp4';
         const INTRO_VIDEO_DESKTOP = MICKEY_VIDEO;
         let introVideoActive = false;
         let introLoopBusy = false;
@@ -1733,15 +1770,23 @@
             if (getIntroMode() === 'mobile') {
                 return {
                     url: INTRO_VIDEO_MOBILE,
+                    fallback: INTRO_VIDEO_MOBILE_FALLBACK,
                     mime: 'video/mp4',
                     types: ['video/mp4', 'video/quicktime']
                 };
             }
             return {
                 url: INTRO_VIDEO_DESKTOP,
+                fallback: MICKEY_VIDEO_FALLBACK,
                 mime: 'video/mp4',
                 types: ['video/mp4']
             };
+        }
+
+        function introSrcMatches(url) {
+            if (!introVideo || !url) return false;
+            const cur = introVideo.currentSrc || introVideo.src || '';
+            return cur === url || (cur && url && cur.split('?')[0] === url.split('?')[0]);
         }
 
         function prepareIntroVideoEl() {
@@ -1781,11 +1826,13 @@
         function syncIntroVideoSources(force) {
             if (!introVideo) return;
             const mode = getIntroMode();
-            if (!force && mode === introSrcMode && (introBlobUrl || introVideo.querySelector('source') || introVideo.src)) {
+            const spec = getIntroVideoSpec();
+            if (!force && (introSrcMatches(spec.url) || introSrcMatches(spec.fallback) || introBlobUrl)) {
+                introSrcMode = mode;
                 return;
             }
             introSrcMode = mode;
-            applyIntroProgressiveSources(getIntroVideoSpec());
+            applyIntroProgressiveSources(spec);
         }
 
         // GitHub serves application/octet-stream — browsers (esp. Safari) may reject it.
@@ -1803,8 +1850,15 @@
 
             introSrcLoading = (async () => {
                 try {
-                    const res = await fetch(spec.url, { mode: 'cors', credentials: 'omit' });
-                    if (!res.ok) throw new Error('intro fetch ' + res.status);
+                    const urls = [spec.url, spec.fallback].filter(Boolean);
+                    let res = null;
+                    for (let i = 0; i < urls.length; i++) {
+                        try {
+                            const next = await fetch(urls[i], { mode: 'cors', credentials: 'omit' });
+                            if (next.ok) { res = next; break; }
+                        } catch (_) {}
+                    }
+                    if (!res) throw new Error('intro fetch failed');
                     const buf = await res.arrayBuffer();
                     if (introBlobUrl) {
                         try { URL.revokeObjectURL(introBlobUrl); } catch (_) {}
@@ -1889,6 +1943,7 @@
             syncIntroVideoSources();
             armIntroVideoLoop();
 
+            const spec = getIntroVideoSpec();
             const kick = () => tryPlayIntro();
 
             // Prefer progressive playback first (don't wait on full blob download)
@@ -1896,23 +1951,27 @@
             else {
                 introVideo.addEventListener('loadeddata', kick, { once: true });
                 introVideo.addEventListener('canplay', kick, { once: true });
-                try { introVideo.load(); } catch (_) {}
+                if (!introSrcMatches(spec.url) && !introSrcMatches(spec.fallback)) {
+                    try { introVideo.load(); } catch (_) {}
+                }
             }
             kick();
             setTimeout(kick, 80);
             setTimeout(kick, 400);
 
-            // If browser rejects octet-stream / decode fails, refetch as typed blob
             const onError = () => {
-                ensureIntroVideoSrc().then(() => kick());
+                applyIntroProgressiveSources({
+                    url: spec.fallback || spec.url,
+                    mime: spec.mime,
+                    types: spec.types
+                });
+                kick();
             };
             introVideo.addEventListener('error', onError, { once: true });
             setTimeout(() => {
                 if (!introVideoActive) return;
-                if (introVideo.readyState < 2 || introVideo.error) {
-                    ensureIntroVideoSrc().then(() => kick());
-                }
-            }, 1200);
+                if (introVideo.error || introVideo.readyState < 1) onError();
+            }, 2500);
         }
 
         function leaveIntroVideo() {
@@ -2863,7 +2922,7 @@
         'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb',
         'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb'
     ];
-    const DITHER = { pixel: 1, pixelMobile: 1, threshold: 148, contrast: 1.2, strength: 1 };
+    const DITHER = { pixel: 1, pixelMobile: 1.25, threshold: 148, contrast: 1.2, strength: 1 };
     const MODEL_GREY = 0xe4e4e4;
     const mobileMq = window.matchMedia('(max-width: 868px)');
     const stage = document.getElementById('keep-stage');
@@ -2880,6 +2939,18 @@
         return mobileMq.matches ? DITHER.pixelMobile : DITHER.pixel;
     }
 
+    function keepControlsHint() {
+        const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        const coarse = window.matchMedia('(pointer: coarse)').matches;
+        const touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        if (fine && !coarse) return 'click + drag to orbit · scroll to zoom';
+        if (coarse && !fine) return 'drag to orbit · pinch to zoom';
+        if (touch && fine) return 'click + drag to orbit · scroll or pinch to zoom';
+        return 'drag to orbit · pinch to zoom';
+    }
+
+    let keepReady = false;
+
     function setLoadProgress(pct, label) {
         const n = Math.max(0, Math.min(100, Math.round(pct)));
         if (progressFill) progressFill.style.width = n + '%';
@@ -2887,7 +2958,8 @@
         if (hint && label) hint.textContent = label;
     }
 
-    function finishLoad(label) {
+    function finishLoad(label, ready) {
+        keepReady = !!ready;
         setLoadProgress(100, label);
         if (loadEl) loadEl.classList.add('is-done');
         if (progressEl) progressEl.removeAttribute('aria-valuenow');
@@ -3048,6 +3120,7 @@
     controls.addEventListener('start', () => {
         controls.autoRotate = false;
         if (hint) hint.textContent = '';
+        keepReady = false;
     });
     controls.addEventListener('end', () => {
         if (!reduceMotion) controls.autoRotate = true;
@@ -3104,6 +3177,7 @@
     window.addEventListener('resize', resize, { passive: true });
     function onMobileChange() {
         if (keepRoot) fit(keepRoot);
+        if (keepReady && hint) hint.textContent = keepControlsHint();
         resize();
     }
     if (mobileMq.addEventListener) mobileMq.addEventListener('change', onMobileChange);
@@ -3114,7 +3188,7 @@
 
     async function fetchModelBuffer() {
         let res = null;
-        const early = window.__keepModelFetch;
+        const early = (window.__startKeepModelFetch && window.__startKeepModelFetch()) || window.__keepModelFetch;
         if (early) {
             try {
                 const earlyRes = await early;
@@ -3166,7 +3240,7 @@
             scene.add(gltf.scene);
             fit(gltf.scene);
             resize();
-            finishLoad('drag · pinch to zoom');
+            finishLoad(keepControlsHint(), true);
         }, (err) => {
             console.error(err);
             finishLoad('3d parse failed');
