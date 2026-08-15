@@ -13,6 +13,7 @@
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js" crossorigin>
     <link rel="preload" as="video" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/mickey.mp4" type="video/mp4" media="(min-width: 869px)" fetchpriority="high">
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin fetchpriority="low">
+    <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb" crossorigin fetchpriority="low">
     <link rel="preload" as="fetch" href="https://pub-0cec75ffecf341d1a495d5c9d91d29ef.r2.dev/Sorcerer_Mickey_.glb" crossorigin fetchpriority="low">
     <script>
         (function () {
@@ -23,10 +24,22 @@
                 }
                 return window.__keepModelFetch;
             };
-            var BLADE = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb';
+            var BLADE_URLS = [
+                'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb',
+                'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/blade_.glb',
+                'blade_.glb'
+            ];
             window.__startBladeModelFetch = function () {
                 if (!window.__bladeModelFetch) {
-                    window.__bladeModelFetch = fetch(BLADE, { mode: 'cors', credentials: 'omit' });
+                    window.__bladeModelFetch = (async function () {
+                        for (var i = 0; i < BLADE_URLS.length; i++) {
+                            try {
+                                var r = await fetch(BLADE_URLS[i], { mode: 'cors', credentials: 'omit' });
+                                if (r && r.ok) return r;
+                            } catch (e) {}
+                        }
+                        throw new Error('blade fetch failed');
+                    })();
                 }
                 return window.__bladeModelFetch;
             };
@@ -43,7 +56,7 @@
             };
             window.__startMickeyModelFetch();
             setTimeout(function () { window.__startKeepModelFetch(); }, 1200);
-            setTimeout(function () { window.__startBladeModelFetch(); }, 1800);
+            setTimeout(function () { window.__startBladeModelFetch(); }, 1200);
         })();
     </script>
     <style>
@@ -3029,7 +3042,6 @@
     const MODEL_GREY = 0xe4e4e4;
     const mobileMq = window.matchMedia('(max-width: 868px)');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const loader = new GLTFLoader();
 
     function ditherPixel() {
         return mobileMq.matches ? DITHER.pixelMobile : DITHER.pixel;
@@ -3128,7 +3140,10 @@
         if (early) {
             try {
                 const earlyRes = await early;
-                if (earlyRes && earlyRes.ok) res = earlyRes;
+                if (earlyRes && earlyRes.ok) {
+                    try { res = earlyRes.clone(); }
+                    catch (_) { res = earlyRes; }
+                }
             } catch (err) { /* try fallbacks */ }
         }
         if (!res) {
@@ -3150,17 +3165,12 @@
             return res.arrayBuffer();
         }
         const reader = res.body.getReader();
-        const chunks = [];
+        const parts = [];
         let received = 0;
-        const buf = total > 0 ? new Uint8Array(total) : null;
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            if (buf && received + value.byteLength <= buf.length) {
-                buf.set(value, received);
-            } else {
-                chunks.push(value);
-            }
+            parts.push(value);
             received += value.byteLength;
             if (total > 0) {
                 const pct = Math.min(90, Math.round((received / total) * 90));
@@ -3170,11 +3180,13 @@
             }
         }
         setLoadProgress(92, 'parsing 3d');
-        if (buf && received <= buf.length && chunks.length === 0) {
-            return buf.buffer;
+        const out = new Uint8Array(received);
+        let offset = 0;
+        for (let i = 0; i < parts.length; i++) {
+            out.set(parts[i], offset);
+            offset += parts[i].byteLength;
         }
-        return new Blob(chunks.length ? chunks : [buf ? buf.subarray(0, received) : new Uint8Array()])
-            .arrayBuffer();
+        return out.buffer;
     }
 
     function mountDitherModel(opts) {
@@ -3190,6 +3202,8 @@
             console.error(opts.stageId + ' missing');
             return;
         }
+
+        const loader = new GLTFLoader();
 
         let modelReady = false;
 
@@ -3346,7 +3360,7 @@
             camera.far = dist * 50;
             camera.lookAt(0, 0, 0);
             camera.updateProjectionMatrix();
-            aimLongAxis(root, camera, opts.aim);
+            try { aimLongAxis(root, camera, opts.aim); } catch (_) {}
             const box = new THREE.Box3().setFromObject(root);
             const center = box.getCenter(new THREE.Vector3());
             root.position.sub(center);
@@ -3398,11 +3412,16 @@
             try {
                 const buf = await fetchModelBuffer(opts.urls, opts.earlyFetch, setLoadProgress);
                 loader.parse(buf, '', (gltf) => {
-                    tintModel(gltf.scene);
-                    scene.add(gltf.scene);
-                    fit(gltf.scene);
-                    resize();
-                    finishLoad(keepControlsHint(), true);
+                    try {
+                        tintModel(gltf.scene);
+                        scene.add(gltf.scene);
+                        fit(gltf.scene);
+                        resize();
+                        finishLoad(keepControlsHint(), true);
+                    } catch (err) {
+                        console.error(err);
+                        finishLoad('3d parse failed');
+                    }
                 }, (err) => {
                     console.error(err);
                     finishLoad('3d parse failed');
@@ -3442,7 +3461,9 @@
         urls: [
             'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb',
             'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/blade_.glb',
-            'https://github.com/ta222222/research-company/raw/refs/heads/main/blade_.glb'
+            'https://github.com/ta222222/research-company/raw/refs/heads/main/blade_.glb',
+            new URL('blade_.glb', window.location.href).href,
+            'blade_.glb'
         ],
         earlyFetch: () => (window.__startBladeModelFetch && window.__startBladeModelFetch()) || window.__bladeModelFetch,
         fitZoom: 1.25,
