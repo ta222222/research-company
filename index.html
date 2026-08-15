@@ -13,6 +13,7 @@
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js" crossorigin>
     <link rel="preload" as="video" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/mickey.mp4" type="video/mp4" media="(min-width: 869px)" fetchpriority="high">
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin fetchpriority="low">
+    <link rel="preload" as="fetch" href="https://pub-0cec75ffecf341d1a495d5c9d91d29ef.r2.dev/Sorcerer_Mickey_.glb" crossorigin fetchpriority="low">
     <script>
         (function () {
             var GLB = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
@@ -22,7 +23,27 @@
                 }
                 return window.__keepModelFetch;
             };
+            var BLADE = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb';
+            window.__startBladeModelFetch = function () {
+                if (!window.__bladeModelFetch) {
+                    window.__bladeModelFetch = fetch(BLADE, { mode: 'cors', credentials: 'omit' });
+                }
+                return window.__bladeModelFetch;
+            };
+            var MICKEY = 'https://pub-0cec75ffecf341d1a495d5c9d91d29ef.r2.dev/Sorcerer_Mickey_.glb';
+            window.__startMickeyModelFetch = function () {
+                if (!window.__mickeyModelFetch) {
+                    window.__mickeyModelFetch = fetch(MICKEY, {
+                        mode: 'cors',
+                        credentials: 'omit',
+                        cache: 'force-cache'
+                    });
+                }
+                return window.__mickeyModelFetch;
+            };
+            window.__startMickeyModelFetch();
             setTimeout(function () { window.__startKeepModelFetch(); }, 1200);
+            setTimeout(function () { window.__startBladeModelFetch(); }, 1800);
         })();
     </script>
     <style>
@@ -1276,7 +1297,11 @@
         }
 
         #keep-canvas,
-        #keep-dither {
+        #keep-dither,
+        #blade-canvas,
+        #blade-dither,
+        .model-gl,
+        .model-dither {
             display: block;
             position: absolute;
             inset: 0;
@@ -1285,12 +1310,16 @@
             background: transparent;
         }
 
-        #keep-canvas {
+        #keep-canvas,
+        #blade-canvas,
+        .model-gl {
             opacity: 0;
             z-index: 1;
         }
 
-        #keep-dither {
+        #keep-dither,
+        #blade-dither,
+        .model-dither {
             z-index: 0;
             pointer-events: none;
             image-rendering: pixelated;
@@ -1360,6 +1389,10 @@
                 overscroll-behavior: contain;
             }
 
+            .keep-pane + .keep-pane {
+                margin-top: 0;
+            }
+
             body.keep-focused {
                 overscroll-behavior-y: none;
             }
@@ -1372,6 +1405,10 @@
         }
 
         @media (max-width: 868px) {
+            .keep-pane + .keep-pane {
+                margin-top: 10vh;
+            }
+
             .keep-stage-frame {
                 width: 31.5rem;
                 height: 31.5rem;
@@ -1546,8 +1583,8 @@
         <div class="keep-pane" id="keep-pane">
             <div class="keep-stage" id="keep-stage">
                 <div class="keep-stage-frame" id="keep-frame">
-                    <canvas id="keep-canvas" aria-label="Skullstone Keep 3D model"></canvas>
-                    <canvas id="keep-dither" aria-hidden="true"></canvas>
+                    <canvas id="keep-canvas" class="model-gl" aria-label="Skullstone Keep 3D model"></canvas>
+                    <canvas id="keep-dither" class="model-dither" aria-hidden="true"></canvas>
                     <div class="keep-load" id="keep-load">
                         <div
                             class="keep-load-track"
@@ -1561,6 +1598,50 @@
                             <div class="keep-load-fill" id="keep-progress-fill"></div>
                         </div>
                         <p class="keep-hint" id="keep-hint">loading 3d</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="keep-pane" id="blade-pane">
+            <div class="keep-stage" id="blade-stage">
+                <div class="keep-stage-frame" id="blade-frame">
+                    <canvas id="blade-canvas" class="model-gl" aria-label="Blade 3D model"></canvas>
+                    <canvas id="blade-dither" class="model-dither" aria-hidden="true"></canvas>
+                    <div class="keep-load" id="blade-load">
+                        <div
+                            class="keep-load-track"
+                            id="blade-progress"
+                            role="progressbar"
+                            aria-label="Loading blade 3D model"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0"
+                        >
+                            <div class="keep-load-fill" id="blade-progress-fill"></div>
+                        </div>
+                        <p class="keep-hint" id="blade-hint">loading 3d</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="keep-pane" id="mickey-pane">
+            <div class="keep-stage" id="mickey-stage">
+                <div class="keep-stage-frame" id="mickey-frame">
+                    <canvas id="mickey-canvas" class="model-gl" aria-label="Sorcerer Mickey 3D model"></canvas>
+                    <canvas id="mickey-dither" class="model-dither" aria-hidden="true"></canvas>
+                    <div class="keep-load" id="mickey-load">
+                        <div
+                            class="keep-load-track"
+                            id="mickey-progress"
+                            role="progressbar"
+                            aria-label="Loading Sorcerer Mickey 3D model"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0"
+                        >
+                            <div class="keep-load-fill" id="mickey-progress-fill"></div>
+                        </div>
+                        <p class="keep-hint" id="mickey-hint">loading 3d</p>
                     </div>
                 </div>
             </div>
@@ -2812,45 +2893,67 @@
             narrowViewQuery.addEventListener?.('change', syncDotCursor);
         }
 
-        const keepPane = document.getElementById('keep-pane');
-        const keepFrame = document.getElementById('keep-frame');
+        const modelPanes = Array.from(document.querySelectorAll('.keep-pane'));
         const keepDesktopQuery = window.matchMedia('(min-width: 869px) and (hover: hover) and (pointer: fine)');
         let keepSnapState = 'free';
+        let keepSnapPane = null;
         let keepLeaveAcc = 0;
         let keepSnapTimer = null;
 
         function canKeepSnap() {
-            return !!(keepPane && keepDesktopQuery.matches && !reduceMotion);
+            return !!(modelPanes.length && keepDesktopQuery.matches && !reduceMotion);
         }
 
-        function keepPaneScrollTop() {
-            return Math.max(0, window.scrollY + keepPane.getBoundingClientRect().top);
+        function paneScrollTop(pane) {
+            return Math.max(0, window.scrollY + pane.getBoundingClientRect().top);
         }
 
-        function setKeepSnapState(next) {
+        function setKeepSnapState(next, pane) {
             keepSnapState = next;
+            if (next === 'free') keepSnapPane = null;
+            else if (pane) keepSnapPane = pane;
             document.body.classList.toggle('keep-focused', next === 'focused');
             if (next !== 'focused') keepLeaveAcc = 0;
         }
 
-        function snapToKeepPane() {
-            if (!keepPane || keepSnapState === 'snapping') return;
-            setKeepSnapState('snapping');
+        function snapToKeepPane(pane) {
+            const target = pane || keepSnapPane || modelPanes[0];
+            if (!target || keepSnapState === 'snapping') return;
+            setKeepSnapState('snapping', target);
             window.scrollTo({
-                top: keepPaneScrollTop(),
+                top: paneScrollTop(target),
                 behavior: 'smooth'
             });
             clearTimeout(keepSnapTimer);
             keepSnapTimer = setTimeout(() => {
-                window.scrollTo({ top: keepPaneScrollTop(), behavior: 'auto' });
-                setKeepSnapState('focused');
+                window.scrollTo({ top: paneScrollTop(target), behavior: 'auto' });
+                setKeepSnapState('focused', target);
             }, 620);
+        }
+
+        function approachingPane(deltaY) {
+            const vh = window.innerHeight;
+            if (deltaY > 0) {
+                for (let i = 0; i < modelPanes.length; i++) {
+                    const rect = modelPanes[i].getBoundingClientRect();
+                    if (rect.top < vh * 0.7 && rect.top > 12) return modelPanes[i];
+                }
+            } else {
+                for (let i = modelPanes.length - 1; i >= 0; i--) {
+                    const rect = modelPanes[i].getBoundingClientRect();
+                    if (rect.bottom > vh * 0.3 && rect.bottom < vh - 12) return modelPanes[i];
+                }
+            }
+            return null;
         }
 
         function syncKeepSnapFromScroll() {
             if (!canKeepSnap() || keepSnapState === 'snapping') return;
-            const rect = keepPane.getBoundingClientRect();
-            if (Math.abs(rect.top) <= 56) setKeepSnapState('focused');
+            let hit = null;
+            for (let i = 0; i < modelPanes.length; i++) {
+                if (Math.abs(modelPanes[i].getBoundingClientRect().top) <= 56) hit = modelPanes[i];
+            }
+            if (hit) setKeepSnapState('focused', hit);
             else if (keepSnapState === 'focused') setKeepSnapState('free');
         }
 
@@ -2861,28 +2964,22 @@
             if (introScrollArmed) return;
             if (document.getElementById('brand-modal')?.classList.contains('is-open')) return;
 
-            const rect = keepPane.getBoundingClientRect();
-            const vh = window.innerHeight;
-            const onModel = !!(keepFrame && keepFrame.contains(e.target));
-
             if (keepSnapState === 'snapping') {
                 e.preventDefault();
                 return;
             }
 
             if (keepSnapState !== 'focused') {
-                if (e.deltaY > 0 && rect.top < vh * 0.7 && rect.top > 12) {
+                const pane = approachingPane(e.deltaY);
+                if (pane) {
                     e.preventDefault();
-                    snapToKeepPane();
-                    return;
-                }
-                if (e.deltaY < 0 && rect.bottom > vh * 0.3 && rect.bottom < vh - 12) {
-                    e.preventDefault();
-                    snapToKeepPane();
-                    return;
+                    snapToKeepPane(pane);
                 }
                 return;
             }
+
+            const frame = keepSnapPane && keepSnapPane.querySelector('.keep-stage-frame');
+            const onModel = !!(frame && frame.contains(e.target));
 
             if (onModel) {
                 e.preventDefault();
@@ -2898,10 +2995,20 @@
 
             const leavingDown = keepLeaveAcc > 0;
             keepLeaveAcc = 0;
-            setKeepSnapState('free');
+            const idx = modelPanes.indexOf(keepSnapPane);
             e.preventDefault();
-            if (leavingDown) openNavSection('section-tech');
-            else scrollSectionToReadable('section-three');
+            if (leavingDown) {
+                if (idx >= 0 && idx < modelPanes.length - 1) snapToKeepPane(modelPanes[idx + 1]);
+                else {
+                    setKeepSnapState('free');
+                    openNavSection('section-tech');
+                }
+            } else if (idx > 0) {
+                snapToKeepPane(modelPanes[idx - 1]);
+            } else {
+                setKeepSnapState('free');
+                scrollSectionToReadable('section-three');
+            }
         }, { passive: false });
     </script>
 
@@ -2918,22 +3025,11 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    const MODEL_URLS = [
-        'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb',
-        'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb'
-    ];
     const DITHER = { pixel: 1, pixelMobile: 1.25, threshold: 148, contrast: 1.2, strength: 1 };
     const MODEL_GREY = 0xe4e4e4;
     const mobileMq = window.matchMedia('(max-width: 868px)');
-    const stage = document.getElementById('keep-stage');
-    const frame = document.getElementById('keep-frame');
-    const canvas = document.getElementById('keep-canvas');
-    const ditherCanvas = document.getElementById('keep-dither');
-    const hint = document.getElementById('keep-hint');
-    const loadEl = document.getElementById('keep-load');
-    const progressEl = document.getElementById('keep-progress');
-    const progressFill = document.getElementById('keep-progress-fill');
-    if (!stage || !frame || !canvas || !ditherCanvas) throw new Error('keep stage missing');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const loader = new GLTFLoader();
 
     function ditherPixel() {
         return mobileMq.matches ? DITHER.pixelMobile : DITHER.pixel;
@@ -2948,60 +3044,6 @@
         if (touch && fine) return 'click + drag to orbit · scroll or pinch to zoom';
         return 'drag to orbit · pinch to zoom';
     }
-
-    let keepReady = false;
-
-    function setLoadProgress(pct, label) {
-        const n = Math.max(0, Math.min(100, Math.round(pct)));
-        if (progressFill) progressFill.style.width = n + '%';
-        if (progressEl) progressEl.setAttribute('aria-valuenow', String(n));
-        if (hint && label) hint.textContent = label;
-    }
-
-    function finishLoad(label, ready) {
-        keepReady = !!ready;
-        setLoadProgress(100, label);
-        if (loadEl) loadEl.classList.add('is-done');
-        if (progressEl) progressEl.removeAttribute('aria-valuenow');
-    }
-
-    let renderer;
-    try {
-        renderer = new THREE.WebGLRenderer({
-            canvas,
-            alpha: true,
-            antialias: false,
-            powerPreference: 'low-power',
-            premultipliedAlpha: false,
-            preserveDrawingBuffer: true
-        });
-    } catch (err) {
-        if (hint) hint.textContent = 'webgl unavailable';
-        throw err;
-    }
-
-    renderer.setPixelRatio(1);
-    renderer.setClearColor(0x000000, 0);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
-    camera.position.set(2.2, 1.4, 2.6);
-
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xefefef, 1.35));
-    const key = new THREE.DirectionalLight(0xffffff, 1.05);
-    key.position.set(4, 8, 5);
-    scene.add(key);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.42);
-    rim.position.set(-6, 3, -4);
-    scene.add(rim);
-    const fill = new THREE.DirectionalLight(0xffffff, 0.28);
-    fill.position.set(-2, 6, 6);
-    scene.add(fill);
-
-    const work = document.createElement('canvas');
-    const workCtx = work.getContext('2d', { willReadFrequently: true });
-    const ditherCtx = ditherCanvas.getContext('2d');
 
     function ditherImageOnCanvas(ctx, width, height, opts) {
         const threshold = opts.threshold;
@@ -3063,30 +3105,6 @@
         ctx.putImageData(imageData, 0, 0);
     }
 
-    function applyDither() {
-        const scale = Math.max(0.25, ditherPixel());
-        const cssW = Math.max(1, frame.clientWidth);
-        const cssH = Math.max(1, frame.clientHeight);
-        const w = Math.max(1, Math.floor(cssW / scale));
-        const h = Math.max(1, Math.floor(cssH / scale));
-        if (work.width !== w || work.height !== h) {
-            work.width = w;
-            work.height = h;
-        }
-        workCtx.imageSmoothingEnabled = false;
-        workCtx.clearRect(0, 0, w, h);
-        workCtx.drawImage(canvas, 0, 0, w, h);
-        ditherImageOnCanvas(workCtx, w, h, DITHER);
-
-        if (ditherCanvas.width !== cssW || ditherCanvas.height !== cssH) {
-            ditherCanvas.width = cssW;
-            ditherCanvas.height = cssH;
-        }
-        ditherCtx.imageSmoothingEnabled = false;
-        ditherCtx.clearRect(0, 0, cssW, cssH);
-        ditherCtx.drawImage(work, 0, 0, cssW, cssH);
-    }
-
     function tintModel(root) {
         const grey = new THREE.Color(MODEL_GREY);
         root.traverse((obj) => {
@@ -3104,91 +3122,9 @@
         });
     }
 
-    const controls = new OrbitControls(camera, canvas);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.enablePan = false;
-    controls.minDistance = 0.8;
-    controls.maxDistance = 10;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    controls.autoRotate = !reduceMotion;
-    controls.autoRotateSpeed = 0.9;
-    controls.rotateSpeed = 0.7;
-    controls.zoomSpeed = 0.85;
-    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
-    canvas.addEventListener('wheel', (e) => { e.preventDefault(); }, { passive: false });
-    controls.addEventListener('start', () => {
-        controls.autoRotate = false;
-        if (hint) hint.textContent = '';
-        keepReady = false;
-    });
-    controls.addEventListener('end', () => {
-        if (!reduceMotion) controls.autoRotate = true;
-    });
-
-    let keepRoot = null;
-
-    function fit(root) {
-        keepRoot = root;
-        root.position.set(0, 0, 0);
-        const box = new THREE.Box3().setFromObject(root);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        root.position.sub(center);
-        const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        const pad = mobileMq.matches ? 1 : 1.2;
-        const dist = (maxDim * pad) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5));
-        camera.position.set(dist * 0.85, dist * 0.42, dist * 1.1);
-        camera.near = Math.max(0.01, dist / 80);
-        camera.far = dist * 50;
-        camera.updateProjectionMatrix();
-        controls.target.set(0, 0, 0);
-        controls.minDistance = dist * 0.4;
-        controls.maxDistance = dist * 3.4;
-        controls.update();
-    }
-
-    function resize() {
-        const scale = Math.max(0.25, ditherPixel());
-        const cssW = Math.max(1, frame.clientWidth);
-        const cssH = Math.max(1, frame.clientHeight);
-        const w = Math.max(1, Math.floor(cssW / scale));
-        const h = Math.max(1, Math.floor(cssH / scale));
-        camera.aspect = cssW / cssH;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h, false);
-    }
-
-    let visible = true;
-    function tick() {
-        requestAnimationFrame(tick);
-        if (!visible) return;
-        controls.update();
-        renderer.render(scene, camera);
-        applyDither();
-    }
-
-    if ('IntersectionObserver' in window) {
-        new IntersectionObserver((entries) => {
-            visible = !!(entries[0] && entries[0].isIntersecting);
-        }, { threshold: 0.02 }).observe(stage);
-    }
-    if ('ResizeObserver' in window) new ResizeObserver(resize).observe(frame);
-    window.addEventListener('resize', resize, { passive: true });
-    function onMobileChange() {
-        if (keepRoot) fit(keepRoot);
-        if (keepReady && hint) hint.textContent = keepControlsHint();
-        resize();
-    }
-    if (mobileMq.addEventListener) mobileMq.addEventListener('change', onMobileChange);
-    else if (mobileMq.addListener) mobileMq.addListener(onMobileChange);
-    resize();
-    tick();
-    setLoadProgress(2, 'loading 3d');
-
-    async function fetchModelBuffer() {
+    async function fetchModelBuffer(urls, earlyFn, setLoadProgress) {
         let res = null;
-        const early = (window.__startKeepModelFetch && window.__startKeepModelFetch()) || window.__keepModelFetch;
+        const early = (earlyFn && earlyFn()) || null;
         if (early) {
             try {
                 const earlyRes = await early;
@@ -3196,9 +3132,9 @@
             } catch (err) { /* try fallbacks */ }
         }
         if (!res) {
-            for (let i = 0; i < MODEL_URLS.length; i++) {
+            for (let i = 0; i < urls.length; i++) {
                 try {
-                    const next = await fetch(MODEL_URLS[i], { mode: 'cors', credentials: 'omit' });
+                    const next = await fetch(urls[i], { mode: 'cors', credentials: 'omit' });
                     if (next.ok) {
                         res = next;
                         break;
@@ -3216,10 +3152,15 @@
         const reader = res.body.getReader();
         const chunks = [];
         let received = 0;
+        const buf = total > 0 ? new Uint8Array(total) : null;
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            chunks.push(value);
+            if (buf && received + value.byteLength <= buf.length) {
+                buf.set(value, received);
+            } else {
+                chunks.push(value);
+            }
             received += value.byteLength;
             if (total > 0) {
                 const pct = Math.min(90, Math.round((received / total) * 90));
@@ -3229,26 +3170,302 @@
             }
         }
         setLoadProgress(92, 'parsing 3d');
-        return new Blob(chunks).arrayBuffer();
+        if (buf && received <= buf.length && chunks.length === 0) {
+            return buf.buffer;
+        }
+        return new Blob(chunks.length ? chunks : [buf ? buf.subarray(0, received) : new Uint8Array()])
+            .arrayBuffer();
     }
 
-    const loader = new GLTFLoader();
-    try {
-        const buf = await fetchModelBuffer();
-        loader.parse(buf, '', (gltf) => {
-            tintModel(gltf.scene);
-            scene.add(gltf.scene);
-            fit(gltf.scene);
-            resize();
-            finishLoad(keepControlsHint(), true);
-        }, (err) => {
-            console.error(err);
-            finishLoad('3d parse failed');
+    function mountDitherModel(opts) {
+        const stage = document.getElementById(opts.stageId);
+        const frame = document.getElementById(opts.frameId);
+        const canvas = document.getElementById(opts.canvasId);
+        const ditherCanvas = document.getElementById(opts.ditherId);
+        const hint = document.getElementById(opts.hintId);
+        const loadEl = document.getElementById(opts.loadId);
+        const progressEl = document.getElementById(opts.progressId);
+        const progressFill = document.getElementById(opts.fillId);
+        if (!stage || !frame || !canvas || !ditherCanvas) {
+            console.error(opts.stageId + ' missing');
+            return;
+        }
+
+        let modelReady = false;
+
+        function setLoadProgress(pct, label) {
+            const n = Math.max(0, Math.min(100, Math.round(pct)));
+            if (progressFill) progressFill.style.width = n + '%';
+            if (progressEl) progressEl.setAttribute('aria-valuenow', String(n));
+            if (hint && label) hint.textContent = label;
+        }
+
+        function finishLoad(label, ready) {
+            modelReady = !!ready;
+            setLoadProgress(100, label);
+            if (loadEl) loadEl.classList.add('is-done');
+            if (progressEl) progressEl.removeAttribute('aria-valuenow');
+        }
+
+        let renderer;
+        try {
+            renderer = new THREE.WebGLRenderer({
+                canvas,
+                alpha: true,
+                antialias: false,
+                powerPreference: 'low-power',
+                premultipliedAlpha: false,
+                preserveDrawingBuffer: true
+            });
+        } catch (err) {
+            if (hint) hint.textContent = 'webgl unavailable';
+            return;
+        }
+
+        renderer.setPixelRatio(1);
+        renderer.setClearColor(0x000000, 0);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
+        camera.position.set(2.2, 1.4, 2.6);
+
+        scene.add(new THREE.HemisphereLight(0xffffff, 0xefefef, 1.35));
+        const key = new THREE.DirectionalLight(0xffffff, 1.05);
+        key.position.set(4, 8, 5);
+        scene.add(key);
+        const rim = new THREE.DirectionalLight(0xffffff, 0.42);
+        rim.position.set(-6, 3, -4);
+        scene.add(rim);
+        const fill = new THREE.DirectionalLight(0xffffff, 0.28);
+        fill.position.set(-2, 6, 6);
+        scene.add(fill);
+
+        const work = document.createElement('canvas');
+        const workCtx = work.getContext('2d', { willReadFrequently: true });
+        const ditherCtx = ditherCanvas.getContext('2d');
+
+        function applyDither() {
+            const scale = Math.max(0.25, ditherPixel());
+            const cssW = Math.max(1, frame.clientWidth);
+            const cssH = Math.max(1, frame.clientHeight);
+            const w = Math.max(1, Math.floor(cssW / scale));
+            const h = Math.max(1, Math.floor(cssH / scale));
+            if (work.width !== w || work.height !== h) {
+                work.width = w;
+                work.height = h;
+            }
+            workCtx.imageSmoothingEnabled = false;
+            workCtx.clearRect(0, 0, w, h);
+            workCtx.drawImage(canvas, 0, 0, w, h);
+            ditherImageOnCanvas(workCtx, w, h, DITHER);
+
+            if (ditherCanvas.width !== cssW || ditherCanvas.height !== cssH) {
+                ditherCanvas.width = cssW;
+                ditherCanvas.height = cssH;
+            }
+            ditherCtx.imageSmoothingEnabled = false;
+            ditherCtx.clearRect(0, 0, cssW, cssH);
+            ditherCtx.drawImage(work, 0, 0, cssW, cssH);
+        }
+
+        const controls = new OrbitControls(camera, canvas);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.enablePan = false;
+        controls.minDistance = 0.8;
+        controls.maxDistance = 10;
+        controls.autoRotate = !reduceMotion;
+        controls.autoRotateSpeed = opts.autoRotateSpeed != null ? opts.autoRotateSpeed : 0.9;
+        controls.rotateSpeed = 0.7;
+        controls.zoomSpeed = 0.85;
+        controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
+        canvas.addEventListener('wheel', (e) => { e.preventDefault(); }, { passive: false });
+        controls.addEventListener('start', () => {
+            controls.autoRotate = false;
+            if (hint) hint.textContent = '';
+            modelReady = false;
         });
-    } catch (err) {
-        console.error(err);
-        finishLoad('3d unavailable');
+        controls.addEventListener('end', () => {
+            if (!reduceMotion) controls.autoRotate = true;
+        });
+
+        let modelRoot = null;
+
+        function aimLongAxis(root, camera, mode) {
+            if (mode !== 'ne') return;
+            root.rotation.set(0, 0, 0);
+            root.position.set(0, 0, 0);
+            root.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(root);
+            const size = box.getSize(new THREE.Vector3());
+            const axes = [
+                new THREE.Vector3(1, 0, 0),
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(0, 0, 1)
+            ];
+            const spans = [size.x, size.y, size.z];
+            let longIdx = 0;
+            for (let i = 1; i < 3; i++) {
+                if (spans[i] > spans[longIdx]) longIdx = i;
+            }
+            const long = axes[longIdx];
+            camera.updateMatrixWorld();
+            const camRight = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+            const camUp = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+            const look = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 2).multiplyScalar(-1).normalize();
+            const ne = camRight.clone().add(camUp).add(look.multiplyScalar(0.22)).normalize();
+            root.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(long, ne));
+            root.updateMatrixWorld(true);
+
+            let midIdx = longIdx === 0 ? 1 : 0;
+            for (let i = 0; i < 3; i++) {
+                if (i !== longIdx && spans[i] > spans[midIdx]) midIdx = i;
+            }
+            const mid = axes[midIdx].clone().applyQuaternion(root.quaternion);
+            const desired = look.clone().lerp(camUp, 0.4).normalize();
+            const midPerp = mid.clone().sub(ne.clone().multiplyScalar(mid.dot(ne)));
+            const desPerp = desired.sub(ne.clone().multiplyScalar(desired.dot(ne)));
+            if (midPerp.lengthSq() > 1e-6 && desPerp.lengthSq() > 1e-6) {
+                root.quaternion.premultiply(new THREE.Quaternion().setFromUnitVectors(midPerp.normalize(), desPerp.normalize()));
+            }
+        }
+
+        function fit(root) {
+            modelRoot = root;
+            root.position.set(0, 0, 0);
+            root.rotation.set(0, 0, 0);
+            const box0 = new THREE.Box3().setFromObject(root);
+            const size0 = box0.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size0.x, size0.y, size0.z) || 1;
+            const pad = mobileMq.matches ? 1 : 1.2;
+            const zoom = opts.fitZoom > 0 ? opts.fitZoom : 1;
+            const dist = ((maxDim * pad) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5))) / zoom;
+            camera.position.set(dist * 0.85, dist * 0.42, dist * 1.1);
+            camera.near = Math.max(0.01, dist / 80);
+            camera.far = dist * 50;
+            camera.lookAt(0, 0, 0);
+            camera.updateProjectionMatrix();
+            aimLongAxis(root, camera, opts.aim);
+            const box = new THREE.Box3().setFromObject(root);
+            const center = box.getCenter(new THREE.Vector3());
+            root.position.sub(center);
+            controls.target.set(0, 0, 0);
+            controls.minDistance = dist * 0.4;
+            controls.maxDistance = dist * 3.4;
+            controls.update();
+        }
+
+        function resize() {
+            const scale = Math.max(0.25, ditherPixel());
+            const cssW = Math.max(1, frame.clientWidth);
+            const cssH = Math.max(1, frame.clientHeight);
+            const w = Math.max(1, Math.floor(cssW / scale));
+            const h = Math.max(1, Math.floor(cssH / scale));
+            camera.aspect = cssW / cssH;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h, false);
+        }
+
+        let visible = true;
+        function tick() {
+            requestAnimationFrame(tick);
+            if (!visible) return;
+            controls.update();
+            renderer.render(scene, camera);
+            applyDither();
+        }
+
+        if ('IntersectionObserver' in window) {
+            new IntersectionObserver((entries) => {
+                visible = !!(entries[0] && entries[0].isIntersecting);
+            }, { threshold: 0.02 }).observe(stage);
+        }
+        if ('ResizeObserver' in window) new ResizeObserver(resize).observe(frame);
+        window.addEventListener('resize', resize, { passive: true });
+        function onMobileChange() {
+            if (modelRoot) fit(modelRoot);
+            if (modelReady && hint) hint.textContent = keepControlsHint();
+            resize();
+        }
+        if (mobileMq.addEventListener) mobileMq.addEventListener('change', onMobileChange);
+        else if (mobileMq.addListener) mobileMq.addListener(onMobileChange);
+        resize();
+        tick();
+        setLoadProgress(2, 'loading 3d');
+
+        (async () => {
+            try {
+                const buf = await fetchModelBuffer(opts.urls, opts.earlyFetch, setLoadProgress);
+                loader.parse(buf, '', (gltf) => {
+                    tintModel(gltf.scene);
+                    scene.add(gltf.scene);
+                    fit(gltf.scene);
+                    resize();
+                    finishLoad(keepControlsHint(), true);
+                }, (err) => {
+                    console.error(err);
+                    finishLoad('3d parse failed');
+                });
+            } catch (err) {
+                console.error(err);
+                finishLoad('3d unavailable');
+            }
+        })();
     }
+
+    mountDitherModel({
+        stageId: 'keep-stage',
+        frameId: 'keep-frame',
+        canvasId: 'keep-canvas',
+        ditherId: 'keep-dither',
+        hintId: 'keep-hint',
+        loadId: 'keep-load',
+        progressId: 'keep-progress',
+        fillId: 'keep-progress-fill',
+        urls: [
+            'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb',
+            'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb'
+        ],
+        earlyFetch: () => (window.__startKeepModelFetch && window.__startKeepModelFetch()) || window.__keepModelFetch
+    });
+
+    mountDitherModel({
+        stageId: 'blade-stage',
+        frameId: 'blade-frame',
+        canvasId: 'blade-canvas',
+        ditherId: 'blade-dither',
+        hintId: 'blade-hint',
+        loadId: 'blade-load',
+        progressId: 'blade-progress',
+        fillId: 'blade-progress-fill',
+        urls: [
+            'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb',
+            'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/blade_.glb',
+            'https://github.com/ta222222/research-company/raw/refs/heads/main/blade_.glb'
+        ],
+        earlyFetch: () => (window.__startBladeModelFetch && window.__startBladeModelFetch()) || window.__bladeModelFetch,
+        fitZoom: 1.25,
+        aim: 'ne',
+        autoRotateSpeed: -0.9
+    });
+
+    mountDitherModel({
+        stageId: 'mickey-stage',
+        frameId: 'mickey-frame',
+        canvasId: 'mickey-canvas',
+        ditherId: 'mickey-dither',
+        hintId: 'mickey-hint',
+        loadId: 'mickey-load',
+        progressId: 'mickey-progress',
+        fillId: 'mickey-progress-fill',
+        urls: [
+            'https://pub-0cec75ffecf341d1a495d5c9d91d29ef.r2.dev/Sorcerer_Mickey_.glb',
+            new URL('Sorcerer_Mickey_.glb', window.location.href).href,
+            'Sorcerer_Mickey_.glb'
+        ],
+        earlyFetch: () => (window.__startMickeyModelFetch && window.__startMickeyModelFetch()) || window.__mickeyModelFetch
+    });
     </script>
 </body>
 </html>
