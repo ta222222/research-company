@@ -8,6 +8,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Index — Hammer Media Research Company</title>
         <!-- code by @yungethernet -->
+    <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/build/three.module.js" crossorigin>
+    <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/loaders/GLTFLoader.js" crossorigin>
+    <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js" crossorigin>
+    <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin>
+    <script>
+        window.__keepModelFetch = fetch(
+            'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb',
+            { mode: 'cors', credentials: 'omit' }
+        );
+    </script>
     <style>
         :root {
             --font-mono:
@@ -1280,6 +1290,38 @@
             image-rendering: crisp-edges;
         }
 
+        .keep-load {
+            position: absolute;
+            z-index: 2;
+            left: 24px;
+            right: 24px;
+            bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .keep-load.is-done .keep-load-track {
+            opacity: 0;
+        }
+
+        .keep-load-track {
+            height: 1px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            transition: opacity 0.35s ease;
+        }
+
+        .keep-load-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--border-color);
+            transform-origin: left center;
+        }
+
         .keep-hint {
             position: absolute;
             z-index: 2;
@@ -1324,9 +1366,9 @@
 
         @media (max-width: 868px) {
             .keep-stage-frame {
-                width: 26.25rem;
-                height: 26.25rem;
-                flex-basis: 26.25rem;
+                width: 31.5rem;
+                height: 31.5rem;
+                flex-basis: 31.5rem;
                 max-width: calc(100vw - 2rem);
                 max-height: calc(100vw - 2rem);
             }
@@ -1471,7 +1513,20 @@
                 <div class="keep-stage-frame" id="keep-frame">
                     <canvas id="keep-canvas" aria-label="Skullstone Keep 3D model"></canvas>
                     <canvas id="keep-dither" aria-hidden="true"></canvas>
-                    <p class="keep-hint" id="keep-hint">loading 3d</p>
+                    <div class="keep-load" id="keep-load">
+                        <div
+                            class="keep-load-track"
+                            id="keep-progress"
+                            role="progressbar"
+                            aria-label="Loading 3D model"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0"
+                        >
+                            <div class="keep-load-fill" id="keep-progress-fill"></div>
+                        </div>
+                        <p class="keep-hint" id="keep-hint">loading 3d</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2804,15 +2859,39 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    const MODEL_URL = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
-    const DITHER = { pixel: 1, threshold: 148, contrast: 1.2, strength: 1 };
+    const MODEL_URLS = [
+        'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb',
+        'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb'
+    ];
+    const DITHER = { pixel: 1, pixelMobile: 1.25, threshold: 148, contrast: 1.2, strength: 1 };
     const MODEL_GREY = 0xe4e4e4;
+    const mobileMq = window.matchMedia('(max-width: 868px)');
     const stage = document.getElementById('keep-stage');
     const frame = document.getElementById('keep-frame');
     const canvas = document.getElementById('keep-canvas');
     const ditherCanvas = document.getElementById('keep-dither');
     const hint = document.getElementById('keep-hint');
+    const loadEl = document.getElementById('keep-load');
+    const progressEl = document.getElementById('keep-progress');
+    const progressFill = document.getElementById('keep-progress-fill');
     if (!stage || !frame || !canvas || !ditherCanvas) throw new Error('keep stage missing');
+
+    function ditherPixel() {
+        return mobileMq.matches ? DITHER.pixelMobile : DITHER.pixel;
+    }
+
+    function setLoadProgress(pct, label) {
+        const n = Math.max(0, Math.min(100, Math.round(pct)));
+        if (progressFill) progressFill.style.width = n + '%';
+        if (progressEl) progressEl.setAttribute('aria-valuenow', String(n));
+        if (hint && label) hint.textContent = label;
+    }
+
+    function finishLoad(label) {
+        setLoadProgress(100, label);
+        if (loadEl) loadEl.classList.add('is-done');
+        if (progressEl) progressEl.removeAttribute('aria-valuenow');
+    }
 
     let renderer;
     try {
@@ -2913,7 +2992,7 @@
     }
 
     function applyDither() {
-        const scale = Math.max(0.25, DITHER.pixel);
+        const scale = Math.max(0.25, ditherPixel());
         const cssW = Math.max(1, frame.clientWidth);
         const cssH = Math.max(1, frame.clientHeight);
         const w = Math.max(1, Math.floor(cssW / scale));
@@ -2974,13 +3053,18 @@
         if (!reduceMotion) controls.autoRotate = true;
     });
 
+    let keepRoot = null;
+
     function fit(root) {
+        keepRoot = root;
+        root.position.set(0, 0, 0);
         const box = new THREE.Box3().setFromObject(root);
         const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
         root.position.sub(center);
         const maxDim = Math.max(size.x, size.y, size.z) || 1;
-        const dist = (maxDim * 1.2) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5));
+        const pad = mobileMq.matches ? 1 : 1.2;
+        const dist = (maxDim * pad) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5));
         camera.position.set(dist * 0.85, dist * 0.42, dist * 1.1);
         camera.near = Math.max(0.01, dist / 80);
         camera.far = dist * 50;
@@ -2992,7 +3076,7 @@
     }
 
     function resize() {
-        const scale = Math.max(0.25, DITHER.pixel);
+        const scale = Math.max(0.25, ditherPixel());
         const cssW = Math.max(1, frame.clientWidth);
         const cssH = Math.max(1, frame.clientHeight);
         const w = Math.max(1, Math.floor(cssW / scale));
@@ -3018,27 +3102,78 @@
     }
     if ('ResizeObserver' in window) new ResizeObserver(resize).observe(frame);
     window.addEventListener('resize', resize, { passive: true });
+    function onMobileChange() {
+        if (keepRoot) fit(keepRoot);
+        resize();
+    }
+    if (mobileMq.addEventListener) mobileMq.addEventListener('change', onMobileChange);
+    else if (mobileMq.addListener) mobileMq.addListener(onMobileChange);
     resize();
     tick();
+    setLoadProgress(2, 'loading 3d');
+
+    async function fetchModelBuffer() {
+        let res = null;
+        const early = window.__keepModelFetch;
+        if (early) {
+            try {
+                const earlyRes = await early;
+                if (earlyRes && earlyRes.ok) res = earlyRes;
+            } catch (err) { /* try fallbacks */ }
+        }
+        if (!res) {
+            for (let i = 0; i < MODEL_URLS.length; i++) {
+                try {
+                    const next = await fetch(MODEL_URLS[i], { mode: 'cors', credentials: 'omit' });
+                    if (next.ok) {
+                        res = next;
+                        break;
+                    }
+                } catch (err) { /* next url */ }
+            }
+        }
+        if (!res) throw new Error('model unavailable');
+
+        const total = Number(res.headers.get('content-length')) || 0;
+        if (!res.body || !res.body.getReader) {
+            setLoadProgress(70, 'loading 3d');
+            return res.arrayBuffer();
+        }
+        const reader = res.body.getReader();
+        const chunks = [];
+        let received = 0;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.byteLength;
+            if (total > 0) {
+                const pct = Math.min(90, Math.round((received / total) * 90));
+                setLoadProgress(pct, 'loading 3d  ' + pct + '%');
+            } else {
+                setLoadProgress(Math.min(85, 8 + Math.log10(received + 1) * 18), 'loading 3d');
+            }
+        }
+        setLoadProgress(92, 'parsing 3d');
+        return new Blob(chunks).arrayBuffer();
+    }
 
     const loader = new GLTFLoader();
     try {
-        const res = await fetch(MODEL_URL, { mode: 'cors', credentials: 'omit' });
-        if (!res.ok) throw new Error('model ' + res.status);
-        const buf = await res.arrayBuffer();
+        const buf = await fetchModelBuffer();
         loader.parse(buf, '', (gltf) => {
             tintModel(gltf.scene);
             scene.add(gltf.scene);
             fit(gltf.scene);
             resize();
-            if (hint) hint.textContent = 'drag · pinch to zoom';
+            finishLoad('drag · pinch to zoom');
         }, (err) => {
             console.error(err);
-            if (hint) hint.textContent = '3d parse failed';
+            finishLoad('3d parse failed');
         });
     } catch (err) {
         console.error(err);
-        if (hint) hint.textContent = '3d unavailable';
+        finishLoad('3d unavailable');
     }
     </script>
 </body>
