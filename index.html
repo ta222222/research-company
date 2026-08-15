@@ -1212,6 +1212,82 @@
                 padding: 1px 0;
             }
         }
+
+        /* --- SKULLSTONE KEEP (WebGL) --- */
+        .keep-stage {
+            position: fixed;
+            inset: 0;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        body.intro-past .keep-stage,
+        .keep-stage.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .keep-stage:not(.is-hidden) + .intro-video-wrap {
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        .keep-stage-frame {
+            pointer-events: auto;
+            position: relative;
+            width: min(68vw, 640px);
+            max-width: calc(100vw - 96px);
+            height: min(62vh, 640px);
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .keep-stage canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+
+        .keep-hint {
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 10px;
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 14px;
+            color: var(--muted-text);
+            pointer-events: none;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        @media (min-width: 1280px) {
+            .keep-stage-frame {
+                width: min(72vw, 1140px);
+                max-width: calc(100vw - 96px);
+                height: min(72vh, 1140px);
+            }
+        }
+
+        @media (max-width: 868px) {
+            .keep-stage-frame {
+                width: min(92vw, 520px);
+                max-width: calc(100vw - 28px);
+                height: min(48vh, 380px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1300,7 +1376,13 @@
         </div>
     </div>
 
-    <div class="page-lead" aria-hidden="true">
+    <div class="page-lead">
+        <div class="keep-stage" id="keep-stage">
+            <div class="keep-stage-frame" id="keep-frame">
+                <canvas id="keep-canvas" aria-label="Skullstone Keep 3D model"></canvas>
+                <p class="keep-hint" id="keep-hint">loading 3d</p>
+            </div>
+        </div>
         <div class="intro-video-wrap" id="intro-video-wrap">
             <video
                 id="intro-video"
@@ -2567,6 +2649,128 @@
             finePointerQuery.addEventListener?.('change', syncDotCursor);
             narrowViewQuery.addEventListener?.('change', syncDotCursor);
         }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/controls/OrbitControls.js"></script>
+    <script>
+    (function () {
+        var MODEL_URL = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
+        var stage = document.getElementById('keep-stage');
+        var frame = document.getElementById('keep-frame');
+        var canvas = document.getElementById('keep-canvas');
+        var hint = document.getElementById('keep-hint');
+        if (!stage || !frame || !canvas || !window.THREE || !THREE.WebGLRenderer) {
+            if (stage) stage.classList.add('is-hidden');
+            return;
+        }
+
+        var renderer;
+        try {
+            renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                alpha: true,
+                antialias: true,
+                powerPreference: 'low-power',
+                premultipliedAlpha: false
+            });
+        } catch (err) {
+            if (hint) hint.textContent = 'webgl unavailable';
+            stage.classList.add('is-hidden');
+            return;
+        }
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setClearColor(0x000000, 0);
+        if (THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
+        camera.position.set(2.2, 1.4, 2.6);
+
+        scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 0.95));
+        var key = new THREE.DirectionalLight(0xffffff, 0.9);
+        key.position.set(4, 8, 5);
+        scene.add(key);
+        var rim = new THREE.DirectionalLight(0xffffff, 0.28);
+        rim.position.set(-6, 3, -4);
+        scene.add(rim);
+
+        var controls = new THREE.OrbitControls(camera, canvas);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.enablePan = false;
+        controls.minDistance = 0.8;
+        controls.maxDistance = 10;
+        controls.autoRotate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        controls.autoRotateSpeed = 0.55;
+        controls.rotateSpeed = 0.7;
+        controls.zoomSpeed = 0.85;
+        controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
+
+        controls.addEventListener('start', function () {
+            controls.autoRotate = false;
+            if (hint) hint.textContent = '';
+        });
+
+        function fit(root) {
+            var box = new THREE.Box3().setFromObject(root);
+            var size = box.getSize(new THREE.Vector3());
+            var center = box.getCenter(new THREE.Vector3());
+            root.position.sub(center);
+            var maxDim = Math.max(size.x, size.y, size.z) || 1;
+            var dist = (maxDim * 1.15) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5));
+            camera.position.set(dist * 0.85, dist * 0.42, dist * 1.1);
+            camera.near = Math.max(0.01, dist / 80);
+            camera.far = dist * 50;
+            camera.updateProjectionMatrix();
+            controls.target.set(0, 0, 0);
+            controls.minDistance = dist * 0.4;
+            controls.maxDistance = dist * 3.4;
+            controls.update();
+        }
+
+        function resize() {
+            var w = frame.clientWidth;
+            var h = frame.clientHeight;
+            if (!w || !h) return;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h, false);
+        }
+
+        var visible = true;
+        function tick() {
+            requestAnimationFrame(tick);
+            if (!visible || document.body.classList.contains('intro-past')) return;
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        if ('IntersectionObserver' in window) {
+            var io = new IntersectionObserver(function (entries) {
+                visible = !!(entries[0] && entries[0].isIntersecting);
+            }, { threshold: 0.04 });
+            io.observe(stage);
+        }
+
+        if ('ResizeObserver' in window) new ResizeObserver(resize).observe(frame);
+        window.addEventListener('resize', resize, { passive: true });
+        resize();
+        tick();
+
+        var loader = new THREE.GLTFLoader();
+        loader.load(MODEL_URL, function (gltf) {
+            scene.add(gltf.scene);
+            fit(gltf.scene);
+            if (hint) hint.textContent = 'drag · pinch to zoom';
+            var vid = document.getElementById('intro-video');
+            if (vid) try { vid.pause(); } catch (e) {}
+        }, undefined, function () {
+            if (hint) hint.textContent = '3d unavailable';
+            stage.classList.add('is-hidden');
+        });
+    })();
     </script>
 </body>
 </html>
