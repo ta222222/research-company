@@ -586,6 +586,13 @@
             margin: 0 auto;
         }
 
+        @media (min-width: 869px) {
+            .section-inner {
+                margin-left: max(24px, calc((100% - var(--content-width)) / 2 - 3.5rem));
+                margin-right: auto;
+            }
+        }
+
         /* Let Hammercam media break out and center on desktop */
         #section-tech .section-inner,
         #section-tech .info-grid,
@@ -1214,44 +1221,44 @@
         }
 
         /* --- SKULLSTONE KEEP (WebGL) --- */
+        #section-three .section-inner {
+            overflow: visible;
+        }
+
         .keep-stage {
-            position: fixed;
-            inset: 0;
-            z-index: 3;
+            position: relative;
+            z-index: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             pointer-events: none;
-            opacity: 1;
-            visibility: visible;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
+            margin: 0 auto;
         }
 
-        body.intro-past .keep-stage,
-        .keep-stage.is-hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .keep-stage:not(.is-hidden) + .intro-video-wrap {
-            opacity: 0 !important;
-            visibility: hidden !important;
-            pointer-events: none !important;
+        .keep-pane {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 8vh;
+            padding: 48px 16px 80px;
         }
 
         .keep-stage-frame {
             pointer-events: auto;
             position: relative;
-            width: min(68vw, 640px);
-            max-width: calc(100vw - 96px);
-            height: min(62vh, 640px);
+            width: 26.25rem;
+            height: 26.25rem;
+            flex: 0 0 26.25rem;
             touch-action: none;
             -webkit-user-select: none;
             user-select: none;
         }
 
-        .keep-stage canvas {
+        #keep-canvas {
             display: block;
             width: 100%;
             height: 100%;
@@ -1273,19 +1280,39 @@
             text-transform: uppercase;
         }
 
-        @media (min-width: 1280px) {
+        @media (min-width: 869px) {
+            #section-three {
+                padding-bottom: 0;
+            }
+
+            .keep-pane {
+                min-height: 100vh;
+                min-height: 100dvh;
+                width: 100vw;
+                margin-top: 32vh;
+                margin-left: calc(50% - 50vw);
+                padding: 0;
+                overscroll-behavior: contain;
+            }
+
+            body.keep-focused {
+                overscroll-behavior-y: none;
+            }
+
             .keep-stage-frame {
-                width: min(72vw, 1140px);
-                max-width: calc(100vw - 96px);
-                height: min(72vh, 1140px);
+                width: 666px;
+                height: 666px;
+                flex: 0 0 666px;
             }
         }
 
         @media (max-width: 868px) {
             .keep-stage-frame {
-                width: min(92vw, 520px);
-                max-width: calc(100vw - 28px);
-                height: min(48vh, 380px);
+                width: 26.25rem;
+                height: 26.25rem;
+                flex-basis: 26.25rem;
+                max-width: calc(100vw - 2rem);
+                max-height: calc(100vw - 2rem);
             }
         }
     </style>
@@ -1340,7 +1367,7 @@
                 </li>
                 <li>
                     <a href="#section-three" class="nav-link">
-                        <span class="nav-label">Art, Design &amp; Access</span>
+                        <span class="nav-label">Art and Design</span>
                     </a>
                 </li>
                 <li>
@@ -1376,13 +1403,7 @@
         </div>
     </div>
 
-    <div class="page-lead">
-        <div class="keep-stage" id="keep-stage">
-            <div class="keep-stage-frame" id="keep-frame">
-                <canvas id="keep-canvas" aria-label="Skullstone Keep 3D model"></canvas>
-                <p class="keep-hint" id="keep-hint">loading 3d</p>
-            </div>
-        </div>
+    <div class="page-lead" aria-hidden="true">
         <div class="intro-video-wrap" id="intro-video-wrap">
             <video
                 id="intro-video"
@@ -1423,10 +1444,18 @@
 
     <section id="section-three" aria-labelledby="title-three" data-index="03">
         <div class="section-inner">
-            <div class="section-title reveal" id="title-three">Art, Design &amp; Access</div>
+            <div class="section-title reveal" id="title-three">Art and Design</div>
             <div class="section-body reveal reveal-delay-1">
-                <p>Art exploration and design work runs through all of it — prototypes, interfaces, tools, and objects built to test an idea rather than ship a product. Some become published work; most stay in the database.</p>
-                <p>Access is limited and selective, consistent with how Hammer operates elsewhere: quiet distribution, direct contact, material released on its own schedule rather than a feed.</p>
+                <p>Art exploration and design work runs through all of it — prototypes, interfaces, tools, and objects built to test an idea rather than ship a product. This includes 3D art production and experimentation: models, scenes, and interactive objects logged here while they are still in process.</p>
+                <p>Access is limited and selective, consistent with how Hammer operates elsewhere: quiet distribution, direct contact, material released on its own schedule rather than a feed. Some become published work; most stay in the database.</p>
+            </div>
+        </div>
+        <div class="keep-pane" id="keep-pane">
+            <div class="keep-stage" id="keep-stage">
+                <div class="keep-stage-frame" id="keep-frame">
+                    <canvas id="keep-canvas" aria-label="Skullstone Keep 3D model"></canvas>
+                    <p class="keep-hint" id="keep-hint">loading 3d</p>
+                </div>
             </div>
         </div>
     </section>
@@ -1905,6 +1934,8 @@
             if (typeof closeAllTechPanels === 'function') closeAllTechPanels();
 
             window.scrollTo({ top: 0, behavior: 'auto' });
+
+            if (typeof setKeepSnapState === 'function') setKeepSnapState('free');
 
             if (revealObserver) {
                 revealObserver.disconnect();
@@ -2649,128 +2680,232 @@
             finePointerQuery.addEventListener?.('change', syncDotCursor);
             narrowViewQuery.addEventListener?.('change', syncDotCursor);
         }
+
+        const keepPane = document.getElementById('keep-pane');
+        const keepFrame = document.getElementById('keep-frame');
+        const keepDesktopQuery = window.matchMedia('(min-width: 869px) and (hover: hover) and (pointer: fine)');
+        let keepSnapState = 'free';
+        let keepLeaveAcc = 0;
+        let keepSnapTimer = null;
+
+        function canKeepSnap() {
+            return !!(keepPane && keepDesktopQuery.matches && !reduceMotion);
+        }
+
+        function keepPaneScrollTop() {
+            return Math.max(0, window.scrollY + keepPane.getBoundingClientRect().top);
+        }
+
+        function setKeepSnapState(next) {
+            keepSnapState = next;
+            document.body.classList.toggle('keep-focused', next === 'focused');
+            if (next !== 'focused') keepLeaveAcc = 0;
+        }
+
+        function snapToKeepPane() {
+            if (!keepPane || keepSnapState === 'snapping') return;
+            setKeepSnapState('snapping');
+            window.scrollTo({
+                top: keepPaneScrollTop(),
+                behavior: 'smooth'
+            });
+            clearTimeout(keepSnapTimer);
+            keepSnapTimer = setTimeout(() => {
+                window.scrollTo({ top: keepPaneScrollTop(), behavior: 'auto' });
+                setKeepSnapState('focused');
+            }, 620);
+        }
+
+        function syncKeepSnapFromScroll() {
+            if (!canKeepSnap() || keepSnapState === 'snapping') return;
+            const rect = keepPane.getBoundingClientRect();
+            if (Math.abs(rect.top) <= 56) setKeepSnapState('focused');
+            else if (keepSnapState === 'focused') setKeepSnapState('free');
+        }
+
+        window.addEventListener('scroll', syncKeepSnapFromScroll, { passive: true });
+
+        window.addEventListener('wheel', (e) => {
+            if (!canKeepSnap()) return;
+            if (introScrollArmed) return;
+            if (document.getElementById('brand-modal')?.classList.contains('is-open')) return;
+
+            const rect = keepPane.getBoundingClientRect();
+            const vh = window.innerHeight;
+            const onModel = !!(keepFrame && keepFrame.contains(e.target));
+
+            if (keepSnapState === 'snapping') {
+                e.preventDefault();
+                return;
+            }
+
+            if (keepSnapState !== 'focused') {
+                if (e.deltaY > 0 && rect.top < vh * 0.7 && rect.top > 12) {
+                    e.preventDefault();
+                    snapToKeepPane();
+                    return;
+                }
+                if (e.deltaY < 0 && rect.bottom > vh * 0.3 && rect.bottom < vh - 12) {
+                    e.preventDefault();
+                    snapToKeepPane();
+                    return;
+                }
+                return;
+            }
+
+            if (onModel) {
+                e.preventDefault();
+                keepLeaveAcc = 0;
+                return;
+            }
+
+            keepLeaveAcc += e.deltaY;
+            if (Math.abs(keepLeaveAcc) < 220) {
+                e.preventDefault();
+                return;
+            }
+
+            const leavingDown = keepLeaveAcc > 0;
+            keepLeaveAcc = 0;
+            setKeepSnapState('free');
+            e.preventDefault();
+            if (leavingDown) openNavSection('section-tech');
+            else scrollSectionToReadable('section-three');
+        }, { passive: false });
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/controls/OrbitControls.js"></script>
-    <script>
-    (function () {
-        var MODEL_URL = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
-        var stage = document.getElementById('keep-stage');
-        var frame = document.getElementById('keep-frame');
-        var canvas = document.getElementById('keep-canvas');
-        var hint = document.getElementById('keep-hint');
-        if (!stage || !frame || !canvas || !window.THREE || !THREE.WebGLRenderer) {
-            if (stage) stage.classList.add('is-hidden');
-            return;
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.1/examples/jsm/"
         }
+    }
+    </script>
+    <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        var renderer;
-        try {
-            renderer = new THREE.WebGLRenderer({
-                canvas: canvas,
-                alpha: true,
-                antialias: true,
-                powerPreference: 'low-power',
-                premultipliedAlpha: false
-            });
-        } catch (err) {
-            if (hint) hint.textContent = 'webgl unavailable';
-            stage.classList.add('is-hidden');
-            return;
-        }
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-        renderer.setClearColor(0x000000, 0);
-        if (THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+    const MODEL_URL = 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
+    const stage = document.getElementById('keep-stage');
+    const frame = document.getElementById('keep-frame');
+    const canvas = document.getElementById('keep-canvas');
+    const hint = document.getElementById('keep-hint');
+    if (!stage || !frame || !canvas) throw new Error('keep stage missing');
 
-        var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
-        camera.position.set(2.2, 1.4, 2.6);
-
-        scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbbb, 0.95));
-        var key = new THREE.DirectionalLight(0xffffff, 0.9);
-        key.position.set(4, 8, 5);
-        scene.add(key);
-        var rim = new THREE.DirectionalLight(0xffffff, 0.28);
-        rim.position.set(-6, 3, -4);
-        scene.add(rim);
-
-        var controls = new THREE.OrbitControls(camera, canvas);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.08;
-        controls.enablePan = false;
-        controls.minDistance = 0.8;
-        controls.maxDistance = 10;
-        controls.autoRotate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        controls.autoRotateSpeed = 0.55;
-        controls.rotateSpeed = 0.7;
-        controls.zoomSpeed = 0.85;
-        controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
-
-        controls.addEventListener('start', function () {
-            controls.autoRotate = false;
-            if (hint) hint.textContent = '';
+    let renderer;
+    try {
+        renderer = new THREE.WebGLRenderer({
+            canvas,
+            alpha: true,
+            antialias: true,
+            powerPreference: 'low-power',
+            premultipliedAlpha: false
         });
+    } catch (err) {
+        if (hint) hint.textContent = 'webgl unavailable';
+        throw err;
+    }
 
-        function fit(root) {
-            var box = new THREE.Box3().setFromObject(root);
-            var size = box.getSize(new THREE.Vector3());
-            var center = box.getCenter(new THREE.Vector3());
-            root.position.sub(center);
-            var maxDim = Math.max(size.x, size.y, size.z) || 1;
-            var dist = (maxDim * 1.15) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5));
-            camera.position.set(dist * 0.85, dist * 0.42, dist * 1.1);
-            camera.near = Math.max(0.01, dist / 80);
-            camera.far = dist * 50;
-            camera.updateProjectionMatrix();
-            controls.target.set(0, 0, 0);
-            controls.minDistance = dist * 0.4;
-            controls.maxDistance = dist * 3.4;
-            controls.update();
-        }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-        function resize() {
-            var w = frame.clientWidth;
-            var h = frame.clientHeight;
-            if (!w || !h) return;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h, false);
-        }
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
+    camera.position.set(2.2, 1.4, 2.6);
 
-        var visible = true;
-        function tick() {
-            requestAnimationFrame(tick);
-            if (!visible || document.body.classList.contains('intro-past')) return;
-            controls.update();
-            renderer.render(scene, camera);
-        }
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xc8c8c8, 1.05));
+    const key = new THREE.DirectionalLight(0xffffff, 0.95);
+    key.position.set(4, 8, 5);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.32);
+    rim.position.set(-6, 3, -4);
+    scene.add(rim);
 
-        if ('IntersectionObserver' in window) {
-            var io = new IntersectionObserver(function (entries) {
-                visible = !!(entries[0] && entries[0].isIntersecting);
-            }, { threshold: 0.04 });
-            io.observe(stage);
-        }
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enablePan = false;
+    controls.minDistance = 0.8;
+    controls.maxDistance = 10;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    controls.autoRotate = !reduceMotion;
+    controls.autoRotateSpeed = 0.9;
+    controls.rotateSpeed = 0.7;
+    controls.zoomSpeed = 0.85;
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE };
+    canvas.addEventListener('wheel', (e) => { e.preventDefault(); }, { passive: false });
+    controls.addEventListener('start', () => {
+        controls.autoRotate = false;
+        if (hint) hint.textContent = '';
+    });
+    controls.addEventListener('end', () => {
+        if (!reduceMotion) controls.autoRotate = true;
+    });
 
-        if ('ResizeObserver' in window) new ResizeObserver(resize).observe(frame);
-        window.addEventListener('resize', resize, { passive: true });
-        resize();
-        tick();
+    function fit(root) {
+        const box = new THREE.Box3().setFromObject(root);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        root.position.sub(center);
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        const dist = (maxDim * 1.2) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) * 0.5));
+        camera.position.set(dist * 0.85, dist * 0.42, dist * 1.1);
+        camera.near = Math.max(0.01, dist / 80);
+        camera.far = dist * 50;
+        camera.updateProjectionMatrix();
+        controls.target.set(0, 0, 0);
+        controls.minDistance = dist * 0.4;
+        controls.maxDistance = dist * 3.4;
+        controls.update();
+    }
 
-        var loader = new THREE.GLTFLoader();
-        loader.load(MODEL_URL, function (gltf) {
+    function resize() {
+        const w = Math.max(1, frame.clientWidth);
+        const h = Math.max(1, frame.clientHeight);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h, false);
+    }
+
+    let visible = true;
+    function tick() {
+        requestAnimationFrame(tick);
+        if (!visible) return;
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    if ('IntersectionObserver' in window) {
+        new IntersectionObserver((entries) => {
+            visible = !!(entries[0] && entries[0].isIntersecting);
+        }, { threshold: 0.02 }).observe(stage);
+    }
+    if ('ResizeObserver' in window) new ResizeObserver(resize).observe(frame);
+    window.addEventListener('resize', resize, { passive: true });
+    resize();
+    tick();
+
+    const loader = new GLTFLoader();
+    try {
+        const res = await fetch(MODEL_URL, { mode: 'cors', credentials: 'omit' });
+        if (!res.ok) throw new Error('model ' + res.status);
+        const buf = await res.arrayBuffer();
+        loader.parse(buf, '', (gltf) => {
             scene.add(gltf.scene);
             fit(gltf.scene);
+            resize();
             if (hint) hint.textContent = 'drag · pinch to zoom';
-            var vid = document.getElementById('intro-video');
-            if (vid) try { vid.pause(); } catch (e) {}
-        }, undefined, function () {
-            if (hint) hint.textContent = '3d unavailable';
-            stage.classList.add('is-hidden');
+        }, (err) => {
+            console.error(err);
+            if (hint) hint.textContent = '3d parse failed';
         });
-    })();
+    } catch (err) {
+        console.error(err);
+        if (hint) hint.textContent = '3d unavailable';
+    }
     </script>
 </body>
 </html>
