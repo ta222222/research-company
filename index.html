@@ -15,6 +15,7 @@
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin fetchpriority="low">
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb" crossorigin fetchpriority="low">
     <link rel="preload" as="fetch" href="https://pub-0cec75ffecf341d1a495d5c9d91d29ef.r2.dev/Sorcerer_Mickey_.glb" crossorigin fetchpriority="low">
+    <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb" crossorigin fetchpriority="low">
     <script>
         (function () {
             var GLB = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
@@ -54,9 +55,29 @@
                 }
                 return window.__mickeyModelFetch;
             };
+            var HAMMER_URLS = [
+                'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+                'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Hammer_compressed.glb',
+                'https://github.com/ta222222/research-company/raw/refs/heads/main/Hammer_compressed.glb'
+            ];
+            window.__startHammerModelFetch = function () {
+                if (!window.__hammerModelFetch) {
+                    window.__hammerModelFetch = (async function () {
+                        for (var i = 0; i < HAMMER_URLS.length; i++) {
+                            try {
+                                var r = await fetch(HAMMER_URLS[i], { mode: 'cors', credentials: 'omit' });
+                                if (r && r.ok) return r;
+                            } catch (e) {}
+                        }
+                        throw new Error('hammer fetch failed');
+                    })();
+                }
+                return window.__hammerModelFetch;
+            };
             window.__startMickeyModelFetch();
             setTimeout(function () { window.__startKeepModelFetch(); }, 1200);
             setTimeout(function () { window.__startBladeModelFetch(); }, 1200);
+            setTimeout(function () { window.__startHammerModelFetch(); }, 400);
         })();
     </script>
     <style>
@@ -964,13 +985,26 @@
         .brand-modal-panel {
             position: relative;
             z-index: 1;
-            width: min(72vw, 420px);
-            max-height: min(78vh, 720px);
+            width: min(86vw, 28rem);
+            max-height: min(86vh, 32rem);
             background: #ffffff;
             box-shadow: 0 18px 60px rgba(0, 0, 0, 0.14);
             padding: 12px;
             transform: translateY(10px) scale(0.98);
             transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .brand-modal-panel .keep-stage {
+            width: 100%;
+            margin: 0;
+        }
+
+        .brand-modal-panel .keep-stage-frame {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            flex: none;
+            max-height: calc(min(86vh, 32rem) - 24px);
         }
 
         .brand-modal.is-open .brand-modal-panel {
@@ -1451,17 +1485,28 @@
     <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
 
     <div class="brand-modal" id="brand-modal" role="dialog" aria-modal="true" aria-label="Hammer Media Research Company" hidden>
-        <button type="button" class="brand-modal-backdrop" id="brand-modal-backdrop" aria-label="Close image"></button>
+        <button type="button" class="brand-modal-backdrop" id="brand-modal-backdrop" aria-label="Close 3D model"></button>
         <div class="brand-modal-panel">
             <button type="button" class="brand-modal-close" id="brand-modal-close" aria-label="Close">×</button>
-            <div class="image-frame">
-                <img
-                    class="brand-modal-image"
-                    src="https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/castlegrayskullhamm3r.png"
-                    alt="Castle Grayskull Hammer research image"
-                    width="840"
-                    height="1120"
-                />
+            <div class="keep-stage" id="hammer-stage">
+                <div class="keep-stage-frame" id="hammer-frame">
+                    <canvas id="hammer-canvas" class="model-gl" aria-label="Hammer 3D model"></canvas>
+                    <canvas id="hammer-dither" class="model-dither" aria-hidden="true"></canvas>
+                    <div class="keep-load" id="hammer-load">
+                        <div
+                            class="keep-load-track"
+                            id="hammer-progress"
+                            role="progressbar"
+                            aria-label="Loading Hammer 3D model"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0"
+                        >
+                            <div class="keep-load-fill" id="hammer-progress-fill"></div>
+                        </div>
+                        <p class="keep-hint" id="hammer-hint">loading 3d</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1476,7 +1521,7 @@
                 </div>
             </div>
         </div>
-        <button type="button" class="brand-name" aria-label="Open brand image" id="brand-name"></button>
+        <button type="button" class="brand-name" aria-label="Open brand 3D model" id="brand-name"></button>
         <nav class="site-nav" aria-label="Section navigation">
             <div class="section-index" id="section-index" aria-live="polite">
                 <span class="index-current">00</span>
@@ -2355,6 +2400,7 @@
             brandModal.hidden = false;
             requestAnimationFrame(() => {
                 brandModal.classList.add('is-open');
+                window.dispatchEvent(new Event('resize'));
             });
             document.body.classList.add('modal-open');
             brandModalClose?.focus();
@@ -3469,6 +3515,24 @@
         fitZoom: 1.25,
         aim: 'ne',
         autoRotateSpeed: -0.9
+    });
+
+    mountDitherModel({
+        stageId: 'hammer-stage',
+        frameId: 'hammer-frame',
+        canvasId: 'hammer-canvas',
+        ditherId: 'hammer-dither',
+        hintId: 'hammer-hint',
+        loadId: 'hammer-load',
+        progressId: 'hammer-progress',
+        fillId: 'hammer-progress-fill',
+        urls: [
+            'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+            'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Hammer_compressed.glb',
+            'https://github.com/ta222222/research-company/raw/refs/heads/main/Hammer_compressed.glb'
+        ],
+        earlyFetch: () => (window.__startHammerModelFetch && window.__startHammerModelFetch()) || window.__hammerModelFetch,
+        fitZoom: 1.15
     });
 
     mountDitherModel({
