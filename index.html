@@ -10,12 +10,13 @@
         <!-- code by @yungethernet -->
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/build/three.module.js" crossorigin>
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/loaders/GLTFLoader.js" crossorigin>
+    <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/loaders/DRACOLoader.js" crossorigin>
     <link rel="modulepreload" href="https://unpkg.com/three@0.160.1/examples/jsm/controls/OrbitControls.js" crossorigin>
     <link rel="preload" as="video" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/mickey.mp4" type="video/mp4" media="(min-width: 869px)" fetchpriority="high">
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin fetchpriority="low">
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb" crossorigin fetchpriority="low">
     <link rel="preload" as="fetch" href="https://pub-0cec75ffecf341d1a495d5c9d91d29ef.r2.dev/Sorcerer_Mickey_.glb" crossorigin fetchpriority="low">
-    <link rel="preload" as="fetch" href="https://raw.githubusercontent.com/ta222222/research-company/main/Hammer_compressed.glb" crossorigin fetchpriority="low">
+    <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb" crossorigin fetchpriority="low">
     <script>
         (function () {
             var GLB = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
@@ -56,8 +57,10 @@
                 return window.__mickeyModelFetch;
             };
             var HAMMER_URLS = [
+                'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+                'https://fastly.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+                'https://gcore.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
                 'https://raw.githubusercontent.com/ta222222/research-company/main/Hammer_compressed.glb',
-                'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Hammer_compressed.glb',
                 'Hammer_compressed.glb'
             ];
             window.__startHammerModelFetch = function () {
@@ -3082,9 +3085,12 @@
     <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-    const DITHER = { pixel: 1, pixelMobile: 1, threshold: 148, contrast: 1.2, strength: 1 };
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    dracoLoader.preload();
     const MODEL_GREY = 0xe4e4e4;
     const mobileMq = window.matchMedia('(max-width: 868px)');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3181,8 +3187,8 @@
     }
 
     function isGltfBuffer(buf) {
-        if (!buf || buf.byteLength < 4) return false;
-        const u8 = new Uint8Array(buf, 0, 4);
+        const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+        if (u8.byteLength < 4) return false;
         return u8[0] === 0x67 && u8[1] === 0x6c && u8[2] === 0x54 && u8[3] === 0x46;
     }
 
@@ -3263,6 +3269,7 @@
         }
 
         const loader = new GLTFLoader();
+        loader.setDRACOLoader(dracoLoader);
 
         let modelReady = false;
 
@@ -3468,27 +3475,47 @@
         setLoadProgress(2, 'loading 3d');
 
         (async () => {
+            function applyGltf(gltf) {
+                tintModel(gltf.scene);
+                scene.add(gltf.scene);
+                fit(gltf.scene);
+                resize();
+                finishLoad(keepControlsHint(), true);
+            }
+
+            function parseBuffer(buf) {
+                return new Promise((resolve, reject) => {
+                    loader.parse(buf, '', resolve, reject);
+                });
+            }
+
+            async function loadFromUrl(url) {
+                return new Promise((resolve, reject) => {
+                    loader.load(url, resolve, (evt) => {
+                        if (evt && evt.total) {
+                            const pct = Math.min(90, Math.round((evt.loaded / evt.total) * 90));
+                            setLoadProgress(pct, 'loading 3d  ' + pct + '%');
+                        }
+                    }, reject);
+                });
+            }
+
             try {
                 const buf = await fetchModelBuffer(opts.urls, opts.earlyFetch, setLoadProgress);
-                loader.parse(buf, '', (gltf) => {
-                    try {
-                        tintModel(gltf.scene);
-                        scene.add(gltf.scene);
-                        fit(gltf.scene);
-                        resize();
-                        finishLoad(keepControlsHint(), true);
-                    } catch (err) {
-                        console.error(err);
-                        finishLoad('3d parse failed');
-                    }
-                }, (err) => {
-                    console.error(err);
-                    finishLoad('3d parse failed');
-                });
+                applyGltf(await parseBuffer(buf));
+                return;
             } catch (err) {
                 console.error(err);
-                finishLoad('3d unavailable');
             }
+            for (let i = 0; i < opts.urls.length; i++) {
+                try {
+                    applyGltf(await loadFromUrl(opts.urls[i]));
+                    return;
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            finishLoad('3d unavailable');
         })();
     }
 
@@ -3540,8 +3567,10 @@
         progressId: 'hammer-progress',
         fillId: 'hammer-progress-fill',
         urls: [
+            'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+            'https://fastly.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+            'https://gcore.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
             'https://raw.githubusercontent.com/ta222222/research-company/main/Hammer_compressed.glb',
-            'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Hammer_compressed.glb',
             new URL('Hammer_compressed.glb', window.location.href).href,
             'Hammer_compressed.glb'
         ],
