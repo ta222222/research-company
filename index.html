@@ -15,7 +15,7 @@
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb" crossorigin fetchpriority="low">
     <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/blade_.glb" crossorigin fetchpriority="low">
     <link rel="preload" as="fetch" href="https://pub-0cec75ffecf341d1a495d5c9d91d29ef.r2.dev/Sorcerer_Mickey_.glb" crossorigin fetchpriority="low">
-    <link rel="preload" as="fetch" href="https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb" crossorigin fetchpriority="low">
+    <link rel="preload" as="fetch" href="https://raw.githubusercontent.com/ta222222/research-company/main/Hammer_compressed.glb" crossorigin fetchpriority="low">
     <script>
         (function () {
             var GLB = 'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Meshy_AI_Skullstone_Keep_0815074849_generate.glb';
@@ -56,16 +56,16 @@
                 return window.__mickeyModelFetch;
             };
             var HAMMER_URLS = [
-                'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+                'https://raw.githubusercontent.com/ta222222/research-company/main/Hammer_compressed.glb',
                 'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Hammer_compressed.glb',
-                'https://github.com/ta222222/research-company/raw/refs/heads/main/Hammer_compressed.glb'
+                'Hammer_compressed.glb'
             ];
             window.__startHammerModelFetch = function () {
                 if (!window.__hammerModelFetch) {
                     window.__hammerModelFetch = (async function () {
                         for (var i = 0; i < HAMMER_URLS.length; i++) {
                             try {
-                                var r = await fetch(HAMMER_URLS[i], { mode: 'cors', credentials: 'omit' });
+                                var r = await fetch(HAMMER_URLS[i], { mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' });
                                 if (r && r.ok) return r;
                             } catch (e) {}
                         }
@@ -3180,31 +3180,13 @@
         });
     }
 
-    async function fetchModelBuffer(urls, earlyFn, setLoadProgress) {
-        let res = null;
-        const early = (earlyFn && earlyFn()) || null;
-        if (early) {
-            try {
-                const earlyRes = await early;
-                if (earlyRes && earlyRes.ok) {
-                    try { res = earlyRes.clone(); }
-                    catch (_) { res = earlyRes; }
-                }
-            } catch (err) { /* try fallbacks */ }
-        }
-        if (!res) {
-            for (let i = 0; i < urls.length; i++) {
-                try {
-                    const next = await fetch(urls[i], { mode: 'cors', credentials: 'omit' });
-                    if (next.ok) {
-                        res = next;
-                        break;
-                    }
-                } catch (err) { /* next url */ }
-            }
-        }
-        if (!res) throw new Error('model unavailable');
+    function isGltfBuffer(buf) {
+        if (!buf || buf.byteLength < 4) return false;
+        const u8 = new Uint8Array(buf, 0, 4);
+        return u8[0] === 0x67 && u8[1] === 0x6c && u8[2] === 0x54 && u8[3] === 0x46;
+    }
 
+    async function readResponseBuffer(res, setLoadProgress) {
         const total = Number(res.headers.get('content-length')) || 0;
         if (!res.body || !res.body.getReader) {
             setLoadProgress(70, 'loading 3d');
@@ -3225,7 +3207,6 @@
                 setLoadProgress(Math.min(85, 8 + Math.log10(received + 1) * 18), 'loading 3d');
             }
         }
-        setLoadProgress(92, 'parsing 3d');
         const out = new Uint8Array(received);
         let offset = 0;
         for (let i = 0; i < parts.length; i++) {
@@ -3233,6 +3214,38 @@
             offset += parts[i].byteLength;
         }
         return out.buffer;
+    }
+
+    async function bufferFromResponse(res, setLoadProgress) {
+        if (!res || !res.ok) return null;
+        let copy = res;
+        try { copy = res.clone(); } catch (_) {}
+        const buf = await readResponseBuffer(copy, setLoadProgress);
+        return isGltfBuffer(buf) ? buf : null;
+    }
+
+    async function fetchModelBuffer(urls, earlyFn, setLoadProgress) {
+        const early = (earlyFn && earlyFn()) || null;
+        if (early) {
+            try {
+                const buf = await bufferFromResponse(await early, setLoadProgress);
+                if (buf) {
+                    setLoadProgress(92, 'parsing 3d');
+                    return buf;
+                }
+            } catch (err) { /* try fallbacks */ }
+        }
+        for (let i = 0; i < urls.length; i++) {
+            try {
+                const next = await fetch(urls[i], { mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer' });
+                const buf = await bufferFromResponse(next, setLoadProgress);
+                if (buf) {
+                    setLoadProgress(92, 'parsing 3d');
+                    return buf;
+                }
+            } catch (err) { /* next url */ }
+        }
+        throw new Error('model unavailable');
     }
 
     function mountDitherModel(opts) {
@@ -3527,9 +3540,10 @@
         progressId: 'hammer-progress',
         fillId: 'hammer-progress-fill',
         urls: [
-            'https://cdn.jsdelivr.net/gh/ta222222/research-company@main/Hammer_compressed.glb',
+            'https://raw.githubusercontent.com/ta222222/research-company/main/Hammer_compressed.glb',
             'https://raw.githubusercontent.com/ta222222/research-company/refs/heads/main/Hammer_compressed.glb',
-            'https://github.com/ta222222/research-company/raw/refs/heads/main/Hammer_compressed.glb'
+            new URL('Hammer_compressed.glb', window.location.href).href,
+            'Hammer_compressed.glb'
         ],
         earlyFetch: () => (window.__startHammerModelFetch && window.__startHammerModelFetch()) || window.__hammerModelFetch,
         fitZoom: 1.15
